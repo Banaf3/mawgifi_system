@@ -7,21 +7,19 @@ requireAdmin();
 
 $conn = getDBConnection();
 
-// Get statistics
-$total_students = $conn->query("SELECT COUNT(*) as count FROM users")->fetch_assoc()['count'];
+$total_students = $conn->query("SELECT COUNT(*) as count FROM User")->fetch_assoc()['count'];
 $total_vehicles = $conn->query("SELECT COUNT(*) as count FROM Vehicle")->fetch_assoc()['count'];
 $total_bookings = $conn->query("SELECT COUNT(*) as count FROM Booking")->fetch_assoc()['count'];
 $active_bookings = $conn->query("SELECT COUNT(*) as count FROM Booking WHERE booking_end >= NOW()")->fetch_assoc()['count'];
 
-// Get recent bookings
 $recent_bookings = $conn->query("
     SELECT b.*, u.UserName, v.license_plate, ps.space_number 
     FROM Booking b
     JOIN Vehicle v ON b.vehicle_id = v.vehicle_id
-    JOIN users u ON v.user_id = u.user_id
+    JOIN User u ON v.user_id = u.user_id
     LEFT JOIN ParkingSpace ps ON b.Space_id = ps.Space_id
     ORDER BY b.created_at DESC
-    LIMIT 10
+    LIMIT 5
 ");
 
 closeDBConnection($conn);
@@ -34,6 +32,13 @@ closeDBConnection($conn);
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Admin Dashboard - Mawgifi</title>
     <style>
+        :root {
+            --primary-grad: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            --text-dark: #2d3748;
+            --text-light: #718096;
+            --bg-light: #f7fafc;
+        }
+
         * {
             margin: 0;
             padding: 0;
@@ -41,102 +46,100 @@ closeDBConnection($conn);
         }
         
         body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: #f5f6fa;
+            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+            background: var(--bg-light);
         }
         
         .navbar {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: var(--primary-grad);
             color: white;
-            padding: 15px 30px;
+            padding: 20px 40px;
             display: flex;
             justify-content: space-between;
             align-items: center;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            box-shadow: 0 4px 20px rgba(0,0,0,0.1);
         }
         
         .navbar h1 {
-            font-size: 24px;
+            font-size: 1.5rem;
+            font-weight: 700;
         }
         
-        .navbar .user-info {
+        .user-info {
             display: flex;
             align-items: center;
-            gap: 20px;
+            gap: 15px;
         }
         
-        .navbar .user-info span {
-            background: rgba(255,255,255,0.2);
-            padding: 8px 15px;
+        .user-info span {
+            background: rgba(255,255,255,0.15);
+            padding: 8px 16px;
             border-radius: 20px;
             font-size: 14px;
         }
         
-        .navbar .logout-btn {
-            background: rgba(255,255,255,0.3);
-            color: white;
+        .logout-btn {
+            background: white;
+            color: #764ba2;
             border: none;
-            padding: 10px 20px;
+            padding: 10px 24px;
             border-radius: 20px;
             cursor: pointer;
             text-decoration: none;
             font-size: 14px;
-            transition: all 0.3s;
+            font-weight: 600;
         }
         
-        .navbar .logout-btn:hover {
-            background: rgba(255,255,255,0.4);
+        .logout-btn:hover {
+            opacity: 0.9;
         }
         
         .container {
-            max-width: 1200px;
-            margin: 30px auto;
-            padding: 0 20px;
+            max-width: 1100px;
+            margin: 40px auto;
+            padding: 0 30px;
         }
         
         .stats-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-            gap: 20px;
-            margin-bottom: 30px;
+            grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+            gap: 25px;
+            margin-bottom: 40px;
         }
         
         .stat-card {
             background: white;
-            padding: 25px;
-            border-radius: 15px;
-            box-shadow: 0 5px 15px rgba(0,0,0,0.08);
-            transition: transform 0.3s;
-        }
-        
-        .stat-card:hover {
-            transform: translateY(-5px);
+            padding: 30px;
+            border-radius: 20px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.05);
+            border-top: 5px solid #667eea;
         }
         
         .stat-card h3 {
-            color: #666;
-            font-size: 14px;
-            margin-bottom: 10px;
+            color: var(--text-light);
+            font-size: 13px;
+            margin-bottom: 12px;
             text-transform: uppercase;
+            font-weight: 600;
         }
         
         .stat-card .number {
-            font-size: 36px;
-            font-weight: bold;
-            color: #667eea;
+            font-size: 42px;
+            font-weight: 700;
+            color: var(--text-dark);
         }
         
         .section {
             background: white;
-            border-radius: 15px;
-            padding: 25px;
-            box-shadow: 0 5px 15px rgba(0,0,0,0.08);
-            margin-bottom: 30px;
+            border-radius: 20px;
+            padding: 30px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.05);
         }
         
         .section h2 {
-            margin-bottom: 20px;
-            color: #333;
+            margin-bottom: 25px;
+            color: var(--text-dark);
+            font-size: 1.5rem;
         }
         
         table {
@@ -145,26 +148,27 @@ closeDBConnection($conn);
         }
         
         table th {
-            background: #f8f9fa;
-            padding: 12px;
+            background: var(--bg-light);
+            padding: 15px;
             text-align: left;
             font-weight: 600;
-            color: #666;
-            border-bottom: 2px solid #e0e0e0;
+            color: var(--text-dark);
+            font-size: 13px;
+            text-transform: uppercase;
         }
         
         table td {
-            padding: 12px;
-            border-bottom: 1px solid #f0f0f0;
+            padding: 15px;
+            border-bottom: 1px solid #eee;
+            color: var(--text-dark);
         }
         
-        table tr:hover {
-            background: #f8f9fa;
+        table tr:last-child td {
+            border-bottom: none;
         }
         
         .badge {
-            display: inline-block;
-            padding: 4px 12px;
+            padding: 6px 12px;
             border-radius: 12px;
             font-size: 12px;
             font-weight: 600;
@@ -175,31 +179,34 @@ closeDBConnection($conn);
             color: #155724;
         }
         
-        .badge-warning {
-            background: #fff3cd;
-            color: #856404;
-        }
-        
         .badge-danger {
             background: #f8d7da;
             color: #721c24;
         }
+
+        @media (max-width: 768px) {
+            .navbar {
+                padding: 15px 20px;
+            }
+            .user-info span:first-child {
+                display: none;
+            }
+        }
     </style>
 </head>
 <body>
-    <div class="navbar">
-        <h1>🅿️ Mawgifi - Admin</h1>
+    <nav class="navbar">
+        <h1>Mawgifi - Admin Dashboard</h1>
         <div class="user-info">
-            <span>👤 <?php echo htmlspecialchars(getCurrentUsername()); ?></span>
-            <span>🔑 Administrator</span>
+            <span>Administrator</span>
             <a href="../logout.php" class="logout-btn">Logout</a>
         </div>
-    </div>
+    </nav>
     
     <div class="container">
         <div class="stats-grid">
             <div class="stat-card">
-                <h3>Total Students</h3>
+                <h3>Total Users</h3>
                 <div class="number"><?php echo $total_students; ?></div>
             </div>
             <div class="stat-card">
