@@ -1,18 +1,18 @@
--- ============================================
+
 -- Mawgifi Parking System Database
 -- Created: December 8, 2025
--- ============================================
+
 
 -- Drop database if exists and create new one
 DROP DATABASE IF EXISTS mawgifi;
 CREATE DATABASE mawgifi;
 USE mawgifi;
 
--- ============================================
--- Table: Student
--- Description: Stores student information
--- ============================================
-CREATE TABLE Student (
+
+-- Table: User
+-- Description: Stores user information
+
+CREATE TABLE User (
     user_id INT AUTO_INCREMENT PRIMARY KEY,
     UserName VARCHAR(100) NOT NULL,
     Email VARCHAR(150) UNIQUE NOT NULL,
@@ -26,10 +26,10 @@ CREATE TABLE Student (
     INDEX idx_usertype (UserType)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
--- ============================================
+
 -- Table: Vehicle
 -- Description: Stores vehicle information linked to users
--- ============================================
+
 CREATE TABLE Vehicle (
     vehicle_id INT AUTO_INCREMENT PRIMARY KEY,
     user_id INT NOT NULL,
@@ -40,16 +40,16 @@ CREATE TABLE Vehicle (
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     approved_by INT,
     Approved_date DATETIME,
-    FOREIGN KEY (user_id) REFERENCES Student(user_id) ON DELETE CASCADE ON UPDATE CASCADE,
-    FOREIGN KEY (approved_by) REFERENCES Student(user_id) ON DELETE SET NULL ON UPDATE CASCADE,
+    FOREIGN KEY (user_id) REFERENCES User(user_id) ON DELETE CASCADE ON UPDATE CASCADE,
+    FOREIGN KEY (approved_by) REFERENCES User(user_id) ON DELETE SET NULL ON UPDATE CASCADE,
     INDEX idx_user_id (user_id),
     INDEX idx_license_plate (license_plate)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
--- ============================================
+
 -- Table: Event
 -- Description: Stores event information
--- ============================================
+
 CREATE TABLE Event (
     event_id INT AUTO_INCREMENT PRIMARY KEY,
     event_type VARCHAR(50),
@@ -62,10 +62,10 @@ CREATE TABLE Event (
     INDEX idx_event_type (event_type)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
--- ============================================
+
 -- Table: Availability
 -- Description: Stores availability schedules
--- ============================================
+
 CREATE TABLE Availability (
     Availability_id INT AUTO_INCREMENT PRIMARY KEY,
     status ENUM('available', 'occupied', 'maintenance', 'reserved') DEFAULT 'available',
@@ -76,10 +76,10 @@ CREATE TABLE Availability (
     INDEX idx_status (status)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
--- ============================================
+
 -- Table: ParkingArea
 -- Description: Stores parking area information
--- ============================================
+
 CREATE TABLE ParkingArea (
     area_id INT AUTO_INCREMENT PRIMARY KEY,
     Availability_id INT,
@@ -92,10 +92,10 @@ CREATE TABLE ParkingArea (
     INDEX idx_area_name (area_name)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
--- ============================================
+
 -- Table: ParkingSpace
 -- Description: Stores individual parking space information
--- ============================================
+
 CREATE TABLE ParkingSpace (
     Space_id INT AUTO_INCREMENT PRIMARY KEY,
     area_id INT NOT NULL,
@@ -112,10 +112,10 @@ CREATE TABLE ParkingSpace (
     UNIQUE KEY unique_space (area_id, space_number)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
--- ============================================
+
 -- Table: Booking
 -- Description: Stores booking information
--- ============================================
+
 CREATE TABLE Booking (
     booking_id INT AUTO_INCREMENT PRIMARY KEY,
     vehicle_id INT NOT NULL,
@@ -137,21 +137,22 @@ CREATE TABLE Booking (
     INDEX idx_booking_end (booking_end)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
--- ============================================
--- Insert Sample Data
--- ============================================
 
--- Sample Students
-INSERT INTO Student (UserName, Email, PhoneNumber, UserType, password, Address) VALUES
-('Admin User', 'admin@parking.com', '1234567890', 'admin', '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', '123 Admin Street'),
-('John Doe', 'john@example.com', '9876543210', 'student', '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', '456 Student Avenue'),
-('Jane Smith', 'jane@example.com', '5551234567', 'student', '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', '789 Main Road');
+-- Insert Sample Data
+
+
+-- Sample Users
+INSERT INTO User (UserName, Email, PhoneNumber, UserType, password, Address) VALUES
+('Admin User', 'admin@example.com', '1234567890', 'admin', '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', '123 Admin Street'),
+('Staff User', 'staff@example.com', '5556667777', 'staff', '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', '456 Staff Boulevard'),
+('John Doe', 'student@example.com', '9876543210', 'user', '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', '789 Student Avenue'),
+('Jane Smith', 'student2@example.com', '5551234567', 'user', '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', '321 Campus Road');
 
 -- Sample Vehicles
 INSERT INTO Vehicle (user_id, vehicle_type, vehicle_model, license_plate, approved_by, Approved_date) VALUES
-(2, 'Car', 'Toyota Camry', 'ABC123', 1, NOW()),
-(2, 'Motorcycle', 'Honda CBR', 'XYZ789', 1, NOW()),
-(3, 'Car', 'BMW 3 Series', 'DEF456', 1, NOW());
+(3, 'Car', 'Toyota Camry', 'ABC123', 1, NOW()),
+(3, 'Motorcycle', 'Honda CBR', 'XYZ789', 1, NOW()),
+(4, 'Car', 'BMW 3 Series', 'DEF456', 1, NOW());
 
 -- Sample Events
 INSERT INTO Event (event_type, event_time, duration_minutes, event_name, RecordReport) VALUES
@@ -187,9 +188,9 @@ INSERT INTO Booking (vehicle_id, event_id, Space_id, Availability_id, booking_st
 (2, 2, 4, 2, '2025-12-11 08:00:00', '2025-12-11 18:00:00', 'BOOKING_QR_002', 'INV-002'),
 (3, 3, 6, 4, '2025-12-13 08:00:00', '2025-12-13 18:00:00', 'BOOKING_QR_003', 'INV-003');
 
--- ============================================
+
 -- Create Views for Common Queries
--- ============================================
+
 
 -- View: Active Bookings with Details
 CREATE VIEW active_bookings AS
@@ -207,7 +208,7 @@ SELECT
     e.event_name
 FROM Booking b
 JOIN Vehicle v ON b.vehicle_id = v.vehicle_id
-JOIN Student u ON v.user_id = u.user_id
+JOIN User u ON v.user_id = u.user_id
 LEFT JOIN ParkingSpace ps ON b.Space_id = ps.Space_id
 LEFT JOIN ParkingArea pa ON ps.area_id = pa.area_id
 LEFT JOIN Availability a ON b.Availability_id = a.Availability_id
@@ -228,21 +229,21 @@ JOIN ParkingArea pa ON ps.area_id = pa.area_id
 LEFT JOIN Availability a ON ps.Availability_id = a.Availability_id
 WHERE a.status = 'available';
 
--- View: Student Vehicle Summary
-CREATE VIEW student_vehicle_summary AS
+-- View: User Vehicle Summary
+CREATE VIEW user_vehicle_summary AS
 SELECT 
     u.user_id,
     u.UserName,
     u.Email,
     COUNT(v.vehicle_id) as total_vehicles,
     GROUP_CONCAT(v.license_plate SEPARATOR ', ') as vehicle_plates
-FROM Student u
+FROM User u
 LEFT JOIN Vehicle v ON u.user_id = v.user_id
 GROUP BY u.user_id, u.UserName, u.Email;
 
--- ============================================
+
 -- Create Stored Procedures
--- ============================================
+
 
 DELIMITER //
 
@@ -308,13 +309,4 @@ END //
 
 DELIMITER ;
 
--- ============================================
--- Grant Privileges (Adjust as needed)
--- ============================================
--- CREATE USER 'parking_user'@'localhost' IDENTIFIED BY 'your_password_here';
--- GRANT ALL PRIVILEGES ON mawgifi.* TO 'mawgifi_user'@'localhost';
--- FLUSH PRIVILEGES;
 
--- ============================================
--- End of Database Schema
--- ============================================

@@ -7,7 +7,6 @@ $user_type = $_SESSION['user_type'] ?? null;
 // Destroy all session data
 $_SESSION = array();
 
-// Delete session cookie
 if (isset($_COOKIE[session_name()])) {
     setcookie(session_name(), '', time() - 3600, '/');
 }
