@@ -4,7 +4,18 @@ require_once 'config/database.php';
 
 // Redirect if already logged in
 if (isset($_SESSION['user_id'])) {
-    header("Location: dashboard.php");
+    // Route directly based on user type instead of going to dashboard.php
+    switch ($_SESSION['user_type']) {
+        case 'admin':
+            header("Location: admin/dashboard.php");
+            break;
+        case 'staff':
+            header("Location: staff/dashboard.php");
+            break;
+        case 'user':
+            header("Location: student/dashboard.php");
+            break;
+    }
     exit();
 }
 
@@ -30,7 +41,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['login'])) {
             $user = $result->fetch_assoc();
             
             // Verify password
-            if (password_verify($password, $user['PasswordHash'])) {
+            if (password_verify($password, $user['password'])) {
                 $_SESSION['user_id'] = $user['user_id'];
                 $_SESSION['username'] = $user['UserName'];
                 $_SESSION['email'] = $user['Email'];
@@ -85,8 +96,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['login'])) {
             background-position: 70% center;
             background-repeat: no-repeat;
             min-height: 100vh;
-            display: flex;
-            align-items: center;
+            position: relative;
             padding: 20px;
         }
         
@@ -94,7 +104,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['login'])) {
             width: 100%;
             max-width: 450px;
             padding: 40px;
-            margin-left: 8%;
+            position: absolute;
+            left: 8%;
+            top: 50%;
+            transform: translateY(-50%);
         }
         
         .login-header {
@@ -196,7 +209,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['login'])) {
 
         @media (max-width: 768px) {
             .login-container {
-                margin-left: 0;
+                left: 50%;
+                transform: translate(-50%, -50%);
                 padding: 30px 20px;
             }
         }

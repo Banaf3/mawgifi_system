@@ -12,18 +12,16 @@ USE mawgifi;
 -- Table: User
 -- Description: Stores user information
 
-CREATE TABLE User (
+CREATE TABLE `User` (
     user_id INT AUTO_INCREMENT PRIMARY KEY,
     UserName VARCHAR(100) NOT NULL,
-    Email VARCHAR(150) UNIQUE NOT NULL,
+    Email VARCHAR(150) NOT NULL,
     PhoneNumber VARCHAR(20),
     UserType ENUM('admin', 'user', 'staff') DEFAULT 'user',
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     password VARCHAR(255) NOT NULL,
-    Address TEXT,
-    INDEX idx_email (Email),
-    INDEX idx_usertype (UserType)
+    Address TEXT
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 
@@ -35,31 +33,26 @@ CREATE TABLE Vehicle (
     user_id INT NOT NULL,
     vehicle_type VARCHAR(50),
     vehicle_model VARCHAR(100),
-    license_plate VARCHAR(20) UNIQUE NOT NULL,
+    license_plate VARCHAR(20) NOT NULL,
     grant_document VARCHAR(255),
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     approved_by INT,
     Approved_date DATETIME,
-    FOREIGN KEY (user_id) REFERENCES User(user_id) ON DELETE CASCADE ON UPDATE CASCADE,
-    FOREIGN KEY (approved_by) REFERENCES User(user_id) ON DELETE SET NULL ON UPDATE CASCADE,
-    INDEX idx_user_id (user_id),
-    INDEX idx_license_plate (license_plate)
+    FOREIGN KEY (user_id) REFERENCES User(user_id) ON DELETE CASCADE ON UPDATE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 
 -- Table: Event
 -- Description: Stores event information
 
-CREATE TABLE Event (
+CREATE TABLE `Event` (
     event_id INT AUTO_INCREMENT PRIMARY KEY,
     event_type VARCHAR(50),
     event_time DATETIME,
     duration_minutes INT,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     event_name VARCHAR(150),
-    RecordReport TEXT,
-    INDEX idx_event_time (event_time),
-    INDEX idx_event_type (event_type)
+    RecordReport TEXT
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 
@@ -71,9 +64,7 @@ CREATE TABLE Availability (
     status ENUM('available', 'occupied', 'maintenance', 'reserved') DEFAULT 'available',
     date DATE NOT NULL,
     start_time TIME,
-    end_time TIME,
-    INDEX idx_date (date),
-    INDEX idx_status (status)
+    end_time TIME
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 
@@ -88,8 +79,7 @@ CREATE TABLE ParkingArea (
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     AreaSize DECIMAL(10, 2),
-    FOREIGN KEY (Availability_id) REFERENCES Availability(Availability_id) ON DELETE SET NULL ON UPDATE CASCADE,
-    INDEX idx_area_name (area_name)
+    FOREIGN KEY (Availability_id) REFERENCES Availability(Availability_id) ON DELETE SET NULL ON UPDATE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 
@@ -101,15 +91,12 @@ CREATE TABLE ParkingSpace (
     area_id INT NOT NULL,
     Availability_id INT,
     space_number VARCHAR(20) NOT NULL,
-    qr_code VARCHAR(255) UNIQUE,
+    qr_code VARCHAR(255),
     qr_img_path VARCHAR(255),
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     FOREIGN KEY (area_id) REFERENCES ParkingArea(area_id) ON DELETE CASCADE ON UPDATE CASCADE,
-    FOREIGN KEY (Availability_id) REFERENCES Availability(Availability_id) ON DELETE SET NULL ON UPDATE CASCADE,
-    INDEX idx_area_id (area_id),
-    INDEX idx_space_number (space_number),
-    UNIQUE KEY unique_space (area_id, space_number)
+    FOREIGN KEY (Availability_id) REFERENCES Availability(Availability_id) ON DELETE SET NULL ON UPDATE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 
@@ -131,10 +118,7 @@ CREATE TABLE Booking (
     FOREIGN KEY (vehicle_id) REFERENCES Vehicle(vehicle_id) ON DELETE CASCADE ON UPDATE CASCADE,
     FOREIGN KEY (event_id) REFERENCES Event(event_id) ON DELETE SET NULL ON UPDATE CASCADE,
     FOREIGN KEY (Space_id) REFERENCES ParkingSpace(Space_id) ON DELETE SET NULL ON UPDATE CASCADE,
-    FOREIGN KEY (Availability_id) REFERENCES Availability(Availability_id) ON DELETE SET NULL ON UPDATE CASCADE,
-    INDEX idx_vehicle_id (vehicle_id),
-    INDEX idx_booking_start (booking_start),
-    INDEX idx_booking_end (booking_end)
+    FOREIGN KEY (Availability_id) REFERENCES Availability(Availability_id) ON DELETE SET NULL ON UPDATE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 
