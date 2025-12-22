@@ -8,11 +8,13 @@ requireLogin();
 $user_type = $_SESSION['user_type'] ?? 'user';
 $username = $_SESSION['username'] ?? 'User';
 $dashboard_link = ($user_type === 'admin') ? '../../admin/dashboard.php' :
-    (($user_type === 'staff') ? '../../staff/dashboard.php' : '../../student/dashboard.php');
+    (($user_type === 'staff') ? '../../staff/dashboard.php' : '../../Moudel1/Student.php');
 
 // Role-based button names
 $is_student = ($user_type === 'user');
 $nav_vehicles = $is_student ? 'My Vehicles' : 'Vehicles';
+// Fix: Ensure these links point to the correct relative paths
+$link_vehicles = $is_student ? '../../Moudel1/Student.php?view=vehicles' : '../membership/index.php';
 $nav_parking = $is_student ? 'Find Parking' : 'Parking Areas';
 $nav_bookings = $is_student ? 'My Bookings' : 'Bookings';
 ?>
@@ -159,6 +161,17 @@ $nav_bookings = $is_student ? 'My Bookings' : 'Bookings';
             border-radius: 20px;
             min-height: 400px;
             box-shadow: 0 10px 30px rgba(0, 0, 0, 0.05);
+            text-align: center;
+        }
+
+        .empty-state {
+            padding: 60px 20px;
+        }
+
+        .empty-icon {
+            font-size: 4rem;
+            margin-bottom: 20px;
+            display: block;
         }
     </style>
 </head>
@@ -169,7 +182,7 @@ $nav_bookings = $is_student ? 'My Bookings' : 'Bookings';
 
         <div class="nav-links">
             <a href="<?php echo $dashboard_link; ?>">Dashboard</a>
-            <a href="../membership/index.php"><?php echo $nav_vehicles; ?></a>
+            <a href="<?php echo $link_vehicles; ?>"><?php echo $nav_vehicles; ?></a>
             <a href="../parking/index.php"><?php echo $nav_parking; ?></a>
             <a href="../booking/index.php" class="active"><?php echo $nav_bookings; ?></a>
         </div>
@@ -184,15 +197,26 @@ $nav_bookings = $is_student ? 'My Bookings' : 'Bookings';
     <div class="container">
         <div class="module-header">
             <h1><?php echo $is_student ? 'My Bookings' : 'Booking Management'; ?></h1>
-            <p>Manage Parking Booking & QR</p>
+            <p>View and manage your parking reservations</p>
         </div>
 
         <div class="content-area">
-            <h2>Welcome, <?php echo htmlspecialchars($username); ?>!</h2>
-            <p style="margin-top: 15px; color: #718096;">
-                This module handles the booking process and QR code generation for entry/exit.
-                New setup ready for development.
-            </p>
+            <div class="empty-state">
+                <span class="empty-icon">📅</span>
+                <h2>No Active Bookings</h2>
+                <p style="color: var(--text-light); margin-top: 10px;">You haven't made any parking reservations yet.
+                </p>
+                <a href="../parking/index.php" style="
+                    display: inline-block;
+                    margin-top: 20px;
+                    background: var(--primary-grad);
+                    color: white;
+                    padding: 10px 25px;
+                    border-radius: 50px;
+                    text-decoration: none;
+                    font-weight: 600;
+                    ">Find Parking</a>
+            </div>
         </div>
     </div>
 </body>
