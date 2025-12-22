@@ -3,7 +3,7 @@ require_once 'config/session.php';
 require_once 'config/database.php';
 
 // Redirect if already logged in
-if (isset($_SESSION['user_id'])) {
+if (isset($_SESSION['user_id']) && isset($_SESSION['user_type'])) {
     switch ($_SESSION['user_type']) {
         case 'admin':
             header("Location: admin/dashboard.php");
@@ -119,6 +119,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['reset'])) {
 
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -132,7 +133,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['reset'])) {
 
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: linear-gradient(90deg, #000000 0%, #1a1a1a 25%, rgba(0,0,0,0.7) 40%, rgba(0,0,0,0) 100%), url('assets/faculty.webp');
+            background: linear-gradient(90deg, #000000 0%, #1a1a1a 25%, rgba(0, 0, 0, 0.7) 40%, rgba(0, 0, 0, 0) 100%), url('assets/faculty.webp');
             background-size: cover;
             background-position: 70% center;
             background-repeat: no-repeat;
@@ -257,6 +258,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['reset'])) {
         }
     </style>
 </head>
+
 <body>
     <div class="login-container">
         <div class="login-header">
@@ -273,59 +275,57 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['reset'])) {
         <?php endif; ?>
 
         <?php if ($show_forgot): ?>
-        <!-- Forgot Password Form -->
-        <form method="POST" action="">
-            <div class="form-group">
-                <label for="email">Email Address</label>
-                <input type="email" id="email" name="email" required
-                       placeholder="Enter your email"
-                       value="<?php echo isset($_POST['email']) ? htmlspecialchars($_POST['email']) : ''; ?>">
+            <!-- Forgot Password Form -->
+            <form method="POST" action="">
+                <div class="form-group">
+                    <label for="email">Email Address</label>
+                    <input type="email" id="email" name="email" required
+                        placeholder="Enter your email"
+                        value="<?php echo isset($_POST['email']) ? htmlspecialchars($_POST['email']) : ''; ?>">
+                </div>
+
+                <div class="form-group">
+                    <label for="new_password">New Password</label>
+                    <input type="password" id="new_password" name="new_password" required
+                        placeholder="Enter new password">
+                </div>
+
+                <div class="form-group">
+                    <label for="confirm_password">Confirm Password</label>
+                    <input type="password" id="confirm_password" name="confirm_password" required
+                        placeholder="Confirm new password">
+                </div>
+
+                <button type="submit" name="reset" class="btn">Reset Password</button>
+            </form>
+
+            <div class="login-footer">
+                <a href="login.php">Back to Login</a>
             </div>
-
-            <div class="form-group">
-                <label for="new_password">New Password</label>
-                <input type="password" id="new_password" name="new_password" required
-                       placeholder="Enter new password">
-            </div>
-
-            <div class="form-group">
-                <label for="confirm_password">Confirm Password</label>
-                <input type="password" id="confirm_password" name="confirm_password" required
-                       placeholder="Confirm new password">
-            </div>
-
-            <button type="submit" name="reset" class="btn">Reset Password</button>
-        </form>
-
-        <div class="login-footer">
-            <a href="login.php">Back to Login</a>
-        </div>
         <?php else: ?>
-        <!-- Login Form -->
-        <form method="POST" action="">
-            <div class="form-group">
-                <label for="email">Email Address</label>
-                <input type="email" id="email" name="email" required
-                       placeholder="Enter your email"
-                       value="<?php echo isset($_POST['email']) ? htmlspecialchars($_POST['email']) : ''; ?>">
+            <!-- Login Form -->
+            <form method="POST" action="">
+                <div class="form-group">
+                    <label for="email">Email Address</label>
+                    <input type="email" id="email" name="email" required
+                        placeholder="Enter your email"
+                        value="<?php echo isset($_POST['email']) ? htmlspecialchars($_POST['email']) : ''; ?>">
+                </div>
+
+                <div class="form-group">
+                    <label for="password">Password</label>
+                    <input type="password" id="password" name="password" required
+                        placeholder="Enter your password">
+                </div>
+
+                <button type="submit" name="login" class="btn">Login</button>
+            </form>
+
+            <div class="login-footer">
+                <a href="login.php?forgot=1">Forgot Password?</a>
             </div>
-
-            <div class="form-group">
-                <label for="password">Password</label>
-                <input type="password" id="password" name="password" required
-                       placeholder="Enter your password">
-            </div>
-
-            <button type="submit" name="login" class="btn">Login</button>
-        </form>
-
-        <div class="login-footer">
-            <a href="login.php?forgot=1">Forgot Password?</a>
-        </div>
         <?php endif; ?>
     </div>
 </body>
+
 </html>
-
-
-
