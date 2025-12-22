@@ -38,6 +38,7 @@ CREATE TABLE Vehicle (
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     approved_by INT,
     Approved_date DATETIME,
+    status ENUM('pending', 'approved', 'rejected') DEFAULT 'pending',
     FOREIGN KEY (user_id) REFERENCES User(user_id) ON DELETE CASCADE ON UPDATE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 

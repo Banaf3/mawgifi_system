@@ -202,6 +202,7 @@ $username = $_SESSION['username'] ?? 'Administrator';
             <a href="../modules/membership/index.php">Vehicles</a>
             <a href="../modules/parking/index.php">Parking Areas</a>
             <a href="../modules/booking/index.php">Bookings</a>
+            <a href="../Moudel1/Admin.php?view=profile">Profile</a>
         </div>
 
         <div class="user-profile">
