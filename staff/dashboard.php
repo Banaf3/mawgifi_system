@@ -5,27 +5,12 @@ require_once '../config/session.php';
 // Require staff access
 requireStaff();
 
-$conn = getDBConnection();
-
-$today_bookings = $conn->query("SELECT COUNT(*) as count FROM Booking WHERE DATE(booking_start) = CURDATE()")->fetch_assoc()['count'];
-$active_bookings = $conn->query("SELECT COUNT(*) as count FROM Booking WHERE booking_end >= NOW()")->fetch_assoc()['count'];
-$available_spaces = $conn->query("SELECT COUNT(*) as count FROM ParkingSpace ps JOIN Availability a ON ps.Availability_id = a.Availability_id WHERE a.status = 'available'")->fetch_assoc()['count'];
-
-$todays_bookings = $conn->query("
-    SELECT b.*, u.UserName, u.PhoneNumber, v.license_plate, v.vehicle_type, ps.space_number 
-    FROM Booking b
-    JOIN Vehicle v ON b.vehicle_id = v.vehicle_id
-    JOIN User u ON v.user_id = u.user_id
-    LEFT JOIN ParkingSpace ps ON b.Space_id = ps.Space_id
-    WHERE DATE(b.booking_start) = CURDATE()
-    ORDER BY b.booking_start ASC
-");
-
-closeDBConnection($conn);
+$username = $_SESSION['username'] ?? 'Staff Member';
 ?>
 
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -43,204 +28,205 @@ closeDBConnection($conn);
             padding: 0;
             box-sizing: border-box;
         }
-        
+
         body {
             font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
             background: var(--bg-light);
         }
-        
+
         .navbar {
             background: var(--primary-grad);
             color: white;
-            padding: 20px 40px;
+            padding: 15px 40px;
             display: flex;
             justify-content: space-between;
             align-items: center;
-            box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
         }
-        
-        .navbar h1 {
-            font-size: 1.5rem;
+
+        .navbar .brand {
+            font-size: 1.6rem;
+            font-weight: 800;
+            letter-spacing: 0.5px;
+        }
+
+        .nav-links {
+            display: flex;
+            gap: 15px;
+        }
+
+        .nav-links a {
+            color: rgba(255, 255, 255, 0.85);
+            text-decoration: none;
+            font-weight: 500;
+            padding: 10px 18px;
+            border-radius: 50px;
+            transition: all 0.3s ease;
+            font-size: 0.95rem;
+        }
+
+        .nav-links a:hover {
+            background: rgba(255, 255, 255, 0.15);
+            color: white;
+            transform: translateY(-2px);
+        }
+
+        .nav-links a.active {
+            background: white;
+            color: #6a67ce;
             font-weight: 700;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
         }
-        
-        .user-info {
+
+        .user-profile {
             display: flex;
             align-items: center;
             gap: 15px;
         }
-        
-        .user-info span {
-            background: rgba(255,255,255,0.15);
-            padding: 8px 16px;
-            border-radius: 20px;
-            font-size: 14px;
+
+        .user-name {
+            font-weight: 600;
+            font-size: 0.95rem;
         }
-        
+
+        .avatar-circle {
+            width: 35px;
+            height: 35px;
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+        }
+
         .logout-btn {
-            background: white;
-            color: #764ba2;
-            border: none;
-            padding: 10px 24px;
+            background: rgba(0, 0, 0, 0.2);
+            color: white;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            padding: 8px 18px;
             border-radius: 20px;
             cursor: pointer;
             text-decoration: none;
-            font-size: 14px;
+            font-size: 13px;
             font-weight: 600;
+            transition: all 0.3s;
         }
-        
+
         .logout-btn:hover {
-            opacity: 0.9;
+            background: #e53e3e;
+            border-color: #e53e3e;
         }
-        
+
         .container {
             max-width: 1100px;
             margin: 40px auto;
             padding: 0 30px;
         }
-        
-        .stats-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
-            gap: 25px;
+
+        .dashboard-welcome {
+            background: white;
+            padding: 40px;
+            border-radius: 20px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.05);
+            text-align: center;
             margin-bottom: 40px;
         }
-        
-        .stat-card {
-            background: white;
-            padding: 30px;
-            border-radius: 20px;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.05);
-            border-top: 5px solid #667eea;
-        }
-        
-        .stat-card h3 {
-            color: var(--text-light);
-            font-size: 13px;
-            margin-bottom: 12px;
-            text-transform: uppercase;
-            font-weight: 600;
-        }
-        
-        .stat-card .number {
-            font-size: 42px;
-            font-weight: 700;
+
+        .dashboard-welcome h2 {
+            font-size: 2rem;
             color: var(--text-dark);
-        }
-        
-        .section {
-            background: white;
-            border-radius: 20px;
-            padding: 30px;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.05);
-        }
-        
-        .section h2 {
-            margin-bottom: 25px;
-            color: var(--text-dark);
-            font-size: 1.5rem;
-        }
-        
-        table {
-            width: 100%;
-            border-collapse: collapse;
-        }
-        
-        table th {
-            background: var(--bg-light);
-            padding: 15px;
-            text-align: left;
-            font-weight: 600;
-            color: var(--text-dark);
-            font-size: 13px;
-            text-transform: uppercase;
-        }
-        
-        table td {
-            padding: 15px;
-            border-bottom: 1px solid #eee;
-            color: var(--text-dark);
-        }
-        
-        table tr:last-child td {
-            border-bottom: none;
-        }
-        
-        .badge {
-            padding: 6px 12px;
-            border-radius: 12px;
-            font-size: 12px;
-            font-weight: 600;
-            background: #d4edda;
-            color: #155724;
+            margin-bottom: 10px;
         }
 
-        @media (max-width: 768px) {
-            .navbar {
-                padding: 15px 20px;
-            }
-            .user-info span:first-child {
-                display: none;
-            }
+        .modules-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 30px;
+        }
+
+        .module-card {
+            background: white;
+            padding: 30px;
+            border-radius: 20px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.05);
+            transition: transform 0.3s, box-shadow 0.3s;
+            text-decoration: none;
+            color: inherit;
+            border-top: 5px solid transparent;
+        }
+
+        .module-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.1);
+        }
+
+        .module-card.m1 {
+            border-color: #667eea;
+        }
+
+        .module-card.m2 {
+            border-color: #764ba2;
+        }
+
+        .module-card.m3 {
+            border-color: #6b46c1;
+        }
+
+        .module-card h3 {
+            font-size: 1.5rem;
+            margin-bottom: 10px;
+            color: var(--text-dark);
+        }
+
+        .module-card p {
+            color: var(--text-light);
+            line-height: 1.6;
         }
     </style>
 </head>
+
 <body>
     <nav class="navbar">
-        <h1>Mawgifi - Staff Dashboard</h1>
-        <div class="user-info">
-            <span>Staff Member</span>
+        <div class="brand">Mawgifi</div>
+
+        <div class="nav-links">
+            <a href="#" class="active">Dashboard</a>
+            <a href="../modules/membership/index.php">Vehicles</a>
+            <a href="../modules/parking/index.php">Parking Areas</a>
+            <a href="../modules/booking/index.php">Bookings</a>
+        </div>
+
+        <div class="user-profile">
+            <div class="avatar-circle"><?php echo strtoupper(substr($username, 0, 1)); ?></div>
+            <span class="user-name"><?php echo htmlspecialchars($username); ?></span>
             <a href="../logout.php" class="logout-btn">Logout</a>
         </div>
     </nav>
-    
+
     <div class="container">
-        <div class="stats-grid">
-            <div class="stat-card">
-                <h3>Today's Bookings</h3>
-                <div class="number"><?php echo $today_bookings; ?></div>
-            </div>
-            <div class="stat-card">
-                <h3>Active Bookings</h3>
-                <div class="number"><?php echo $active_bookings; ?></div>
-            </div>
-            <div class="stat-card">
-                <h3>Available Spaces</h3>
-                <div class="number"><?php echo $available_spaces; ?></div>
-            </div>
+        <div class="dashboard-welcome">
+            <h2>Staff Portal</h2>
+            <p style="color: #718096; margin-top: 10px;">Select a module to manage or view information.</p>
         </div>
-        
-        <div class="section">
-            <h2>Today's Bookings</h2>
-            <table>
-                <thead>
-                    <tr>
-                        <th>Booking ID</th>
-                        <th>Student</th>
-                        <th>Phone</th>
-                        <th>Vehicle</th>
-                        <th>Type</th>
-                        <th>Space</th>
-                        <th>Time</th>
-                        <th>Status</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <?php while ($booking = $todays_bookings->fetch_assoc()): ?>
-                    <tr>
-                        <td>#<?php echo $booking['booking_id']; ?></td>
-                        <td><?php echo htmlspecialchars($booking['UserName']); ?></td>
-                        <td><?php echo htmlspecialchars($booking['PhoneNumber']); ?></td>
-                        <td><?php echo htmlspecialchars($booking['license_plate']); ?></td>
-                        <td><?php echo htmlspecialchars($booking['vehicle_type']); ?></td>
-                        <td><?php echo htmlspecialchars($booking['space_number'] ?? 'N/A'); ?></td>
-                        <td><?php echo date('H:i', strtotime($booking['booking_start'])) . ' - ' . date('H:i', strtotime($booking['booking_end'])); ?></td>
-                        <td><span class="badge badge-success">Confirmed</span></td>
-                    </tr>
-                    <?php endwhile; ?>
-                </tbody>
-            </table>
+
+        <div class="modules-grid">
+            <a href="../modules/membership/index.php" class="module-card m1">
+                <h3>Vehicles</h3>
+                <p>Access user information and registered vehicles.</p>
+            </a>
+
+            <a href="../modules/parking/index.php" class="module-card m2">
+                <h3>Parking Areas</h3>
+                <p>Check parking availability and manage spaces.</p>
+            </a>
+
+            <a href="../modules/booking/index.php" class="module-card m3">
+                <h3>Bookings</h3>
+                <p>Verify QR codes and manage booking entries.</p>
+            </a>
         </div>
     </div>
 </body>
+
 </html>

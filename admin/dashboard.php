@@ -5,28 +5,12 @@ require_once '../config/session.php';
 // Require admin access
 requireAdmin();
 
-$conn = getDBConnection();
-
-$total_students = $conn->query("SELECT COUNT(*) as count FROM User")->fetch_assoc()['count'];
-$total_vehicles = $conn->query("SELECT COUNT(*) as count FROM Vehicle")->fetch_assoc()['count'];
-$total_bookings = $conn->query("SELECT COUNT(*) as count FROM Booking")->fetch_assoc()['count'];
-$active_bookings = $conn->query("SELECT COUNT(*) as count FROM Booking WHERE booking_end >= NOW()")->fetch_assoc()['count'];
-
-$recent_bookings = $conn->query("
-    SELECT b.*, u.UserName, v.license_plate, ps.space_number 
-    FROM Booking b
-    JOIN Vehicle v ON b.vehicle_id = v.vehicle_id
-    JOIN User u ON v.user_id = u.user_id
-    LEFT JOIN ParkingSpace ps ON b.Space_id = ps.Space_id
-    ORDER BY b.created_at DESC
-    LIMIT 5
-");
-
-closeDBConnection($conn);
+$username = $_SESSION['username'] ?? 'Administrator';
 ?>
 
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -44,224 +28,212 @@ closeDBConnection($conn);
             padding: 0;
             box-sizing: border-box;
         }
-        
+
         body {
             font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
             background: var(--bg-light);
         }
-        
+
         .navbar {
             background: var(--primary-grad);
             color: white;
-            padding: 20px 40px;
+            padding: 15px 40px;
             display: flex;
             justify-content: space-between;
             align-items: center;
-            box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
         }
-        
-        .navbar h1 {
-            font-size: 1.5rem;
+
+        .navbar .brand {
+            font-size: 1.6rem;
+            font-weight: 800;
+            letter-spacing: 0.5px;
+        }
+
+        .nav-links {
+            display: flex;
+            gap: 15px;
+        }
+
+        .nav-links a {
+            color: rgba(255, 255, 255, 0.85);
+            text-decoration: none;
+            font-weight: 500;
+            padding: 10px 18px;
+            border-radius: 50px;
+            transition: all 0.3s ease;
+            font-size: 0.95rem;
+        }
+
+        .nav-links a:hover {
+            background: rgba(255, 255, 255, 0.15);
+            color: white;
+            transform: translateY(-2px);
+        }
+
+        .nav-links a.active {
+            background: white;
+            color: #6a67ce;
             font-weight: 700;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
         }
-        
-        .user-info {
+
+        .user-profile {
             display: flex;
             align-items: center;
             gap: 15px;
         }
-        
-        .user-info span {
-            background: rgba(255,255,255,0.15);
-            padding: 8px 16px;
-            border-radius: 20px;
-            font-size: 14px;
+
+        .user-name {
+            font-weight: 600;
+            font-size: 0.95rem;
         }
-        
+
+        .avatar-circle {
+            width: 35px;
+            height: 35px;
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+        }
+
         .logout-btn {
-            background: white;
-            color: #764ba2;
-            border: none;
-            padding: 10px 24px;
+            background: rgba(0, 0, 0, 0.2);
+            color: white;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            padding: 8px 18px;
             border-radius: 20px;
             cursor: pointer;
             text-decoration: none;
-            font-size: 14px;
+            font-size: 13px;
             font-weight: 600;
+            transition: all 0.3s;
         }
-        
+
         .logout-btn:hover {
-            opacity: 0.9;
+            background: #e53e3e;
+            border-color: #e53e3e;
         }
-        
+
         .container {
             max-width: 1100px;
             margin: 40px auto;
             padding: 0 30px;
         }
-        
-        .stats-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
-            gap: 25px;
+
+        .dashboard-welcome {
+            background: white;
+            padding: 40px;
+            border-radius: 20px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.05);
+            text-align: center;
             margin-bottom: 40px;
         }
-        
-        .stat-card {
-            background: white;
-            padding: 30px;
-            border-radius: 20px;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.05);
-            border-top: 5px solid #667eea;
-        }
-        
-        .stat-card h3 {
-            color: var(--text-light);
-            font-size: 13px;
-            margin-bottom: 12px;
-            text-transform: uppercase;
-            font-weight: 600;
-        }
-        
-        .stat-card .number {
-            font-size: 42px;
-            font-weight: 700;
+
+        .dashboard-welcome h2 {
+            font-size: 2rem;
             color: var(--text-dark);
-        }
-        
-        .section {
-            background: white;
-            border-radius: 20px;
-            padding: 30px;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.05);
-        }
-        
-        .section h2 {
-            margin-bottom: 25px;
-            color: var(--text-dark);
-            font-size: 1.5rem;
-        }
-        
-        table {
-            width: 100%;
-            border-collapse: collapse;
-        }
-        
-        table th {
-            background: var(--bg-light);
-            padding: 15px;
-            text-align: left;
-            font-weight: 600;
-            color: var(--text-dark);
-            font-size: 13px;
-            text-transform: uppercase;
-        }
-        
-        table td {
-            padding: 15px;
-            border-bottom: 1px solid #eee;
-            color: var(--text-dark);
-        }
-        
-        table tr:last-child td {
-            border-bottom: none;
-        }
-        
-        .badge {
-            padding: 6px 12px;
-            border-radius: 12px;
-            font-size: 12px;
-            font-weight: 600;
-        }
-        
-        .badge-success {
-            background: #d4edda;
-            color: #155724;
-        }
-        
-        .badge-danger {
-            background: #f8d7da;
-            color: #721c24;
+            margin-bottom: 10px;
         }
 
-        @media (max-width: 768px) {
-            .navbar {
-                padding: 15px 20px;
-            }
-            .user-info span:first-child {
-                display: none;
-            }
+        .dashboard-welcome p {
+            color: var(--text-light);
+            font-size: 1.1rem;
+        }
+
+        .modules-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 30px;
+        }
+
+        .module-card {
+            background: white;
+            padding: 30px;
+            border-radius: 20px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.05);
+            transition: transform 0.3s, box-shadow 0.3s;
+            text-decoration: none;
+            color: inherit;
+            border-top: 5px solid transparent;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .module-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.1);
+        }
+
+        .module-card.m1 {
+            border-color: #667eea;
+        }
+
+        .module-card.m2 {
+            border-color: #764ba2;
+        }
+
+        .module-card.m3 {
+            border-color: #6b46c1;
+        }
+
+        .module-card h3 {
+            font-size: 1.5rem;
+            margin-bottom: 10px;
+            color: var(--text-dark);
+        }
+
+        .module-card p {
+            color: var(--text-light);
+            line-height: 1.6;
         }
     </style>
 </head>
+
 <body>
     <nav class="navbar">
-        <h1>Mawgifi - Admin Dashboard</h1>
-        <div class="user-info">
-            <span>Administrator</span>
+        <div class="brand">Mawgifi</div>
+
+        <div class="nav-links">
+            <a href="#" class="active">Dashboard</a>
+            <a href="../modules/membership/index.php">Vehicles</a>
+            <a href="../modules/parking/index.php">Parking Areas</a>
+            <a href="../modules/booking/index.php">Bookings</a>
+        </div>
+
+        <div class="user-profile">
+            <div class="avatar-circle"><?php echo strtoupper(substr($username, 0, 1)); ?></div>
+            <span class="user-name"><?php echo htmlspecialchars($username); ?></span>
             <a href="../logout.php" class="logout-btn">Logout</a>
         </div>
     </nav>
-    
+
     <div class="container">
-        <div class="stats-grid">
-            <div class="stat-card">
-                <h3>Total Users</h3>
-                <div class="number"><?php echo $total_students; ?></div>
-            </div>
-            <div class="stat-card">
-                <h3>Total Vehicles</h3>
-                <div class="number"><?php echo $total_vehicles; ?></div>
-            </div>
-            <div class="stat-card">
-                <h3>Total Bookings</h3>
-                <div class="number"><?php echo $total_bookings; ?></div>
-            </div>
-            <div class="stat-card">
-                <h3>Active Bookings</h3>
-                <div class="number"><?php echo $active_bookings; ?></div>
-            </div>
+        <div class="dashboard-welcome">
+            <h2>Welcome Back, <?php echo htmlspecialchars($username); ?>!</h2>
+            <p>Select a module below to start managing the system.</p>
         </div>
-        
-        <div class="section">
-            <h2>Recent Bookings</h2>
-            <table>
-                <thead>
-                    <tr>
-                        <th>Booking ID</th>
-                        <th>Student</th>
-                        <th>Vehicle</th>
-                        <th>Space</th>
-                        <th>Start Time</th>
-                        <th>End Time</th>
-                        <th>Status</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <?php while ($booking = $recent_bookings->fetch_assoc()): ?>
-                    <tr>
-                        <td>#<?php echo $booking['booking_id']; ?></td>
-                        <td><?php echo htmlspecialchars($booking['UserName']); ?></td>
-                        <td><?php echo htmlspecialchars($booking['license_plate']); ?></td>
-                        <td><?php echo htmlspecialchars($booking['space_number'] ?? 'N/A'); ?></td>
-                        <td><?php echo date('Y-m-d H:i', strtotime($booking['booking_start'])); ?></td>
-                        <td><?php echo date('Y-m-d H:i', strtotime($booking['booking_end'])); ?></td>
-                        <td>
-                            <?php 
-                            $now = time();
-                            $end = strtotime($booking['booking_end']);
-                            if ($end > $now) {
-                                echo '<span class="badge badge-success">Active</span>';
-                            } else {
-                                echo '<span class="badge badge-danger">Expired</span>';
-                            }
-                            ?>
-                        </td>
-                    </tr>
-                    <?php endwhile; ?>
-                </tbody>
-            </table>
+
+        <div class="modules-grid">
+            <a href="../modules/membership/index.php" class="module-card m1">
+                <h3>Vehicles</h3>
+                <p>Manage user memberships, profiles, and vehicle registrations.</p>
+            </a>
+
+            <a href="../modules/parking/index.php" class="module-card m2">
+                <h3>Parking Areas</h3>
+                <p>Manage parking areas, spaces, and monitor availability status.</p>
+            </a>
+
+            <a href="../modules/booking/index.php" class="module-card m3">
+                <h3>Bookings</h3>
+                <p>Oversee parking bookings and manage QR code access systems.</p>
+            </a>
         </div>
     </div>
 </body>
+
 </html>

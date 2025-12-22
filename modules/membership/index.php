@@ -1,20 +1,28 @@
 <?php
-require_once '../config/database.php';
-require_once '../config/session.php';
+require_once '../../config/session.php';
+require_once '../../config/database.php';
 
-// Require user login
+// Ensure user is logged in
 requireLogin();
 
-$username = getCurrentUsername();
-?>
+$user_type = $_SESSION['user_type'] ?? 'user';
+$username = $_SESSION['username'] ?? 'User';
+$dashboard_link = ($user_type === 'admin') ? '../../admin/dashboard.php' :
+    (($user_type === 'staff') ? '../../staff/dashboard.php' : '../../student/dashboard.php');
 
+// Role-based button names
+$is_student = ($user_type === 'user');
+$nav_vehicles = $is_student ? 'My Vehicles' : 'Vehicles';
+$nav_parking = $is_student ? 'Find Parking' : 'Parking Areas';
+$nav_bookings = $is_student ? 'My Bookings' : 'Bookings';
+?>
 <!DOCTYPE html>
 <html lang="en">
 
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Student Dashboard - Mawgifi</title>
+    <title>Vehicles - Mawgifi</title>
     <style>
         :root {
             --primary-grad: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
@@ -30,8 +38,9 @@ $username = getCurrentUsername();
         }
 
         body {
-            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+            font-family: 'Segoe UI', system-ui, sans-serif;
             background: var(--bg-light);
+            color: var(--text-dark);
         }
 
         .navbar {
@@ -119,69 +128,37 @@ $username = getCurrentUsername();
         }
 
         .container {
-            max-width: 1100px;
+            max-width: 1200px;
             margin: 40px auto;
-            padding: 0 30px;
+            padding: 0 20px;
         }
 
-        .dashboard-welcome {
+        .module-header {
             background: white;
             padding: 40px;
             border-radius: 20px;
             box-shadow: 0 10px 30px rgba(0, 0, 0, 0.05);
             text-align: center;
-            margin-bottom: 40px;
         }
 
-        .dashboard-welcome h2 {
-            font-size: 2rem;
-            color: var(--text-dark);
-            margin-bottom: 10px;
-        }
-
-        .modules-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-            gap: 30px;
-        }
-
-        .module-card {
-            background: white;
-            padding: 30px;
-            border-radius: 20px;
-            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.05);
-            transition: transform 0.3s, box-shadow 0.3s;
-            text-decoration: none;
-            color: inherit;
-            border-top: 5px solid transparent;
-        }
-
-        .module-card:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.1);
-        }
-
-        .module-card.m1 {
-            border-color: #667eea;
-        }
-
-        .module-card.m2 {
-            border-color: #764ba2;
-        }
-
-        .module-card.m3 {
-            border-color: #6b46c1;
-        }
-
-        .module-card h3 {
-            font-size: 1.5rem;
+        .module-header h1 {
+            font-size: 2.5rem;
             margin-bottom: 10px;
             color: var(--text-dark);
         }
 
-        .module-card p {
+        .module-header p {
             color: var(--text-light);
-            line-height: 1.6;
+            font-size: 1.1rem;
+        }
+
+        .content-area {
+            margin-top: 30px;
+            background: white;
+            padding: 40px;
+            border-radius: 20px;
+            min-height: 400px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.05);
         }
     </style>
 </head>
@@ -191,40 +168,31 @@ $username = getCurrentUsername();
         <div class="brand">Mawgifi</div>
 
         <div class="nav-links">
-            <a href="#" class="active">Dashboard</a>
-            <a href="../modules/membership/index.php">My Vehicles</a>
-            <a href="../modules/parking/index.php">Find Parking</a>
-            <a href="../modules/booking/index.php">My Bookings</a>
+            <a href="<?php echo $dashboard_link; ?>">Dashboard</a>
+            <a href="../membership/index.php" class="active"><?php echo $nav_vehicles; ?></a>
+            <a href="../parking/index.php"><?php echo $nav_parking; ?></a>
+            <a href="../booking/index.php"><?php echo $nav_bookings; ?></a>
         </div>
 
         <div class="user-profile">
             <div class="avatar-circle"><?php echo strtoupper(substr($username, 0, 1)); ?></div>
             <span class="user-name"><?php echo htmlspecialchars($username); ?></span>
-            <a href="../logout.php" class="logout-btn">Logout</a>
+            <a href="../../logout.php" class="logout-btn">Logout</a>
         </div>
     </nav>
 
     <div class="container">
-        <div class="dashboard-welcome">
-            <h2>Welcome, <?php echo htmlspecialchars($username); ?>!</h2>
-            <p style="color: #718096; margin-top: 10px;">Access your parking services below.</p>
+        <div class="module-header">
+            <h1><?php echo $is_student ? 'My Vehicles' : 'Vehicle Management'; ?></h1>
+            <p>Membership & Vehicle Registration</p>
         </div>
 
-        <div class="modules-grid">
-            <a href="../modules/membership/index.php" class="module-card m1">
-                <h3>My Vehicles</h3>
-                <p>Update your profile and register your vehicles.</p>
-            </a>
-
-            <a href="../modules/parking/index.php" class="module-card m2">
-                <h3>Find Parking</h3>
-                <p>View available parking areas and spaces.</p>
-            </a>
-
-            <a href="../modules/booking/index.php" class="module-card m3">
-                <h3>My Bookings</h3>
-                <p>Make a new booking or view your QR codes for entry.</p>
-            </a>
+        <div class="content-area">
+            <h2>Welcome, <?php echo htmlspecialchars($username); ?>!</h2>
+            <p style="margin-top: 15px; color: #718096;">
+                This module handles user profiles, membership status, and vehicle registration.
+                The team can start developing the features here.
+            </p>
         </div>
     </div>
 </body>
