@@ -83,52 +83,52 @@ $stmt->close();  // Line 78: Close the statement
 // Create space number string in format "A-01" or "B-15"
 $space_number = $area_code . '-' . str_pad($slot_number, 2, '0', STR_PAD_LEFT);  // Line 81: Format: Area-Number
 
-// SQL to check if parking space exists in database
-$sql = "SELECT Space_id FROM ParkingSpace WHERE space_number = ?";  // Line 84: Query for space ID
-$stmt = $conn->prepare($sql);  // Line 85: Prepare the statement
-$stmt->bind_param("s", $space_number);  // Line 86: Bind space number as string
-$stmt->execute();  // Line 87: Execute query
-$result = $stmt->get_result();  // Line 88: Get results
+// First, verify the area exists in database (admin must create it first)
+// Area names can be stored as "Area A" or just "A"
+$sql = "SELECT area_id FROM ParkingArea WHERE area_name = ? OR area_name = ?";
+$area_name_full = 'Area ' . $area_code; // Format: "Area A"
+$area_name_short = $area_code; // Format: "A"
+$stmt = $conn->prepare($sql);
+$stmt->bind_param("ss", $area_name_full, $area_name_short);
+$stmt->execute();
+$area_result = $stmt->get_result();
 
-// If parking space doesn't exist, create it
-if ($result->num_rows === 0) {  // Line 91: Space not found in database
-    // First, check if the parking area exists
-    $sql = "SELECT area_id FROM ParkingArea WHERE area_name = ?";  // Line 93: Query for area
-    $area_name = 'Area ' . $area_code;  // Line 94: Format area name like "Area A"
-    $stmt2 = $conn->prepare($sql);  // Line 95: Prepare area query
-    $stmt2->bind_param("s", $area_name);  // Line 96: Bind area name
-    $stmt2->execute();  // Line 97: Execute query
-    $area_result = $stmt2->get_result();  // Line 98: Get results
-
-    // If area doesn't exist, create it
-    if ($area_result->num_rows === 0) {  // Line 101: Area not found
-        // Insert new parking area into database
-        $sql = "INSERT INTO ParkingArea (area_name, area_type) VALUES (?, 'Standard')";  // Line 103: Insert query
-        $stmt3 = $conn->prepare($sql);  // Line 104: Prepare insert statement
-        $stmt3->bind_param("s", $area_name);  // Line 105: Bind area name
-        $stmt3->execute();  // Line 106: Execute insert
-        $area_id = $conn->insert_id;  // Line 107: Get the new area's ID
-        $stmt3->close();  // Line 108: Close statement
-    } else {
-        // Area exists, get its ID
-        $area_row = $area_result->fetch_assoc();  // Line 111: Fetch area data
-        $area_id = $area_row['area_id'];  // Line 112: Get area ID
-    }
-    $stmt2->close();  // Line 114: Close area statement
-
-    // Create the new parking space
-    $sql = "INSERT INTO ParkingSpace (area_id, space_number) VALUES (?, ?)";  // Line 117: Insert space query
-    $stmt2 = $conn->prepare($sql);  // Line 118: Prepare statement
-    $stmt2->bind_param("is", $area_id, $space_number);  // Line 119: Bind area ID and space number
-    $stmt2->execute();  // Line 120: Execute insert
-    $space_id = $conn->insert_id;  // Line 121: Get new space ID
-    $stmt2->close();  // Line 122: Close statement
-} else {
-    // Space exists, get its ID
-    $space_row = $result->fetch_assoc();  // Line 125: Fetch space data
-    $space_id = $space_row['Space_id'];  // Line 126: Get space ID
+if ($area_result->num_rows === 0) {
+    // Area doesn't exist in database - cannot book
+    echo json_encode(['success' => false, 'message' => 'This parking area is not available. Please contact administrator.']);
+    $stmt->close();
+    $conn->close();
+    exit;
 }
-$stmt->close();  // Line 128: Close original statement
+$area_row = $area_result->fetch_assoc();
+$area_id = $area_row['area_id'];
+$stmt->close();
+
+// SQL to check if parking space exists in database
+// Space can be stored as "A-01", "A-1", or just "1"
+$space_number_formatted = $area_code . '-' . str_pad($slot_number, 2, '0', STR_PAD_LEFT); // A-01
+$space_number_short = $area_code . '-' . $slot_number; // A-1
+$space_number_plain = (string)$slot_number; // 1
+
+$sql = "SELECT Space_id FROM ParkingSpace WHERE space_number = ? OR space_number = ? OR space_number = ?";
+$stmt = $conn->prepare($sql);
+$stmt->bind_param("sss", $space_number_formatted, $space_number_short, $space_number_plain);
+$stmt->execute();
+$result = $stmt->get_result();
+
+// If parking space doesn't exist, reject the booking
+if ($result->num_rows === 0) {
+    // Space doesn't exist in database - cannot book
+    echo json_encode(['success' => false, 'message' => 'This parking space is not available. Please contact administrator.']);
+    $stmt->close();
+    $conn->close();
+    exit;
+}
+
+// Space exists, get its ID
+$space_row = $result->fetch_assoc();
+$space_id = $space_row['Space_id'];
+$stmt->close();
 
 // Format booking start and end datetime strings
 $booking_start = $booking_date . ' ' . $start_time . ':00';  // Line 131: Combine date and start time

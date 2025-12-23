@@ -498,6 +498,201 @@ $base_url = $scheme . '://' . $host . '/mawgifi_system/modules/booking/verify.ph
             margin: 5px;
         }
 
+        /* Action buttons container */
+        .booking-actions {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+
+        /* Edit button styling */
+        .edit-btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 0.85rem;
+            transition: transform 0.2s, opacity 0.2s;
+        }
+
+        .edit-btn:hover {
+            transform: scale(1.05);
+            opacity: 0.9;
+        }
+
+        /* Delete button styling */
+        .delete-btn {
+            background: linear-gradient(135deg, #e53e3e 0%, #c53030 100%);
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 0.85rem;
+            transition: transform 0.2s, opacity 0.2s;
+        }
+
+        .delete-btn:hover {
+            transform: scale(1.05);
+            opacity: 0.9;
+        }
+
+        /* Edit modal styling */
+        .edit-popup {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .edit-card {
+            background: white;
+            padding: 40px;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            max-width: 450px;
+            width: 90%;
+        }
+
+        .edit-card h2 {
+            margin-bottom: 20px;
+            color: var(--text-dark);
+            text-align: center;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: var(--text-dark);
+        }
+
+        .form-group input {
+            width: 100%;
+            padding: 12px 15px;
+            border: 2px solid #e2e8f0;
+            border-radius: 10px;
+            font-size: 1rem;
+            transition: border-color 0.3s;
+        }
+
+        .form-group input:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .booking-info-display {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+        }
+
+        .booking-info-display p {
+            margin: 5px 0;
+            color: var(--text-dark);
+        }
+
+        .booking-info-display strong {
+            color: var(--text-light);
+        }
+
+        .btn-save {
+            background: linear-gradient(135deg, #48bb78 0%, #38a169 100%);
+            color: white;
+            border: none;
+            padding: 12px 30px;
+            border-radius: 10px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            margin: 5px;
+            transition: transform 0.2s;
+        }
+
+        .btn-save:hover {
+            transform: scale(1.02);
+        }
+
+        .btn-cancel {
+            background: #e2e8f0;
+            color: var(--text-dark);
+            border: none;
+            padding: 12px 30px;
+            border-radius: 10px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            margin: 5px;
+        }
+
+        .edit-buttons {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            margin-top: 20px;
+        }
+
+        /* Confirm delete modal */
+        .confirm-popup {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 1001;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .confirm-card {
+            background: white;
+            padding: 40px;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            text-align: center;
+            max-width: 400px;
+            width: 90%;
+        }
+
+        .confirm-card h2 {
+            color: #e53e3e;
+            margin-bottom: 15px;
+        }
+
+        .confirm-card p {
+            color: var(--text-light);
+            margin-bottom: 25px;
+        }
+
+        .btn-confirm-delete {
+            background: linear-gradient(135deg, #e53e3e 0%, #c53030 100%);
+            color: white;
+            border: none;
+            padding: 12px 30px;
+            border-radius: 10px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            margin: 5px;
+        }
+
         /* Print styles - only show QR card when printing */
         @media print {
             body * {
@@ -621,9 +816,11 @@ $base_url = $scheme . '://' . $host . '/mawgifi_system/modules/booking/verify.ph
                                 </div>
                             </div>
                             <span class="status-badge active">Active</span>
-                            <button class="qr-btn" onclick="showQRCode(<?php echo htmlspecialchars(json_encode($booking)); ?>, '<?php echo $base_url; ?>')">
-                                📱 View QR
-                            </button>
+                            <div class="booking-actions">
+                                <button class="qr-btn" onclick="showQRCode(<?php echo htmlspecialchars(json_encode($booking)); ?>, '<?php echo $base_url; ?>')">
+                                    📱 View QR
+                                </button>
+                            </div>
                         </div>
                     <?php endforeach; ?>
                 <?php endif; ?>
@@ -631,7 +828,7 @@ $base_url = $scheme . '://' . $host . '/mawgifi_system/modules/booking/verify.ph
                 <?php if (count($grouped_bookings['upcoming']) > 0): ?>
                     <h2 class="section-title" style="margin-top: 30px;">🟠 Upcoming Bookings</h2>
                     <?php foreach ($grouped_bookings['upcoming'] as $booking): ?>
-                        <div class="booking-card">
+                        <div class="booking-card" id="booking-card-<?php echo $booking['booking_id']; ?>">
                             <div class="booking-info">
                                 <div class="booking-slot">
                                     <?php echo htmlspecialchars($booking['space_number'] ?? 'N/A'); ?>
@@ -647,9 +844,17 @@ $base_url = $scheme . '://' . $host . '/mawgifi_system/modules/booking/verify.ph
                                 </div>
                             </div>
                             <span class="status-badge upcoming">Upcoming</span>
-                            <button class="qr-btn" onclick="showQRCode(<?php echo htmlspecialchars(json_encode($booking)); ?>, '<?php echo $base_url; ?>')">
-                                📱 View QR
-                            </button>
+                            <div class="booking-actions">
+                                <button class="qr-btn" onclick="showQRCode(<?php echo htmlspecialchars(json_encode($booking)); ?>, '<?php echo $base_url; ?>')">
+                                    📱 QR
+                                </button>
+                                <button class="edit-btn" onclick="showEditModal(<?php echo htmlspecialchars(json_encode($booking)); ?>)">
+                                    ✏️ Edit
+                                </button>
+                                <button class="delete-btn" onclick="showDeleteConfirm(<?php echo $booking['booking_id']; ?>, '<?php echo htmlspecialchars($booking['space_number'] ?? 'N/A'); ?>')">
+                                    🗑️ Delete
+                                </button>
+                            </div>
                         </div>
                     <?php endforeach; ?>
                 <?php endif; ?>
@@ -657,7 +862,7 @@ $base_url = $scheme . '://' . $host . '/mawgifi_system/modules/booking/verify.ph
                 <?php if (count($grouped_bookings['completed']) > 0): ?>
                     <h2 class="section-title" style="margin-top: 30px;">⚫ Past Bookings</h2>
                     <?php foreach ($grouped_bookings['completed'] as $booking): ?>
-                        <div class="booking-card">
+                        <div class="booking-card" id="booking-card-<?php echo $booking['booking_id']; ?>">
                             <div class="booking-info">
                                 <div class="booking-slot">
                                     <?php echo htmlspecialchars($booking['space_number'] ?? 'N/A'); ?>
@@ -673,6 +878,11 @@ $base_url = $scheme . '://' . $host . '/mawgifi_system/modules/booking/verify.ph
                                 </div>
                             </div>
                             <span class="status-badge completed">Completed</span>
+                            <div class="booking-actions">
+                                <button class="delete-btn" onclick="showDeleteConfirm(<?php echo $booking['booking_id']; ?>, '<?php echo htmlspecialchars($booking['space_number'] ?? 'N/A'); ?>')">
+                                    🗑️ Delete
+                                </button>
+                            </div>
                         </div>
                     <?php endforeach; ?>
                 <?php endif; ?>
@@ -717,6 +927,56 @@ $base_url = $scheme . '://' . $host . '/mawgifi_system/modules/booking/verify.ph
             <!-- Action Buttons -->
             <button class="btn-print" onclick="window.print()">🖨️ Print QR Code</button>
             <button class="btn-close" onclick="closeQrPopup()">Close</button>
+        </div>
+    </div>
+
+    <!-- Edit Booking Popup -->
+    <div class="edit-popup" id="editPopup">
+        <div class="edit-card">
+            <h2>✏️ Edit Booking</h2>
+            
+            <div class="booking-info-display">
+                <p><strong>Slot:</strong> <span id="editSlot">--</span></p>
+                <p><strong>Vehicle:</strong> <span id="editVehicle">--</span></p>
+            </div>
+
+            <form id="editBookingForm">
+                <input type="hidden" id="editBookingId" name="booking_id">
+                
+                <div class="form-group">
+                    <label for="editDate">📅 Booking Date</label>
+                    <input type="date" id="editDate" name="booking_date" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="editStartTime">🕐 Start Time</label>
+                    <input type="time" id="editStartTime" name="start_time" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="editEndTime">🕐 End Time</label>
+                    <input type="time" id="editEndTime" name="end_time" required>
+                </div>
+
+                <div class="edit-buttons">
+                    <button type="submit" class="btn-save">💾 Save Changes</button>
+                    <button type="button" class="btn-cancel" onclick="closeEditPopup()">Cancel</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Delete Confirmation Popup -->
+    <div class="confirm-popup" id="confirmPopup">
+        <div class="confirm-card">
+            <h2>🗑️ Delete Booking</h2>
+            <p>Are you sure you want to delete the booking for slot <strong id="deleteSlotName">--</strong>?</p>
+            <p style="font-size: 0.85rem;">This action cannot be undone.</p>
+            <input type="hidden" id="deleteBookingId">
+            <div class="edit-buttons">
+                <button class="btn-confirm-delete" onclick="confirmDelete()">🗑️ Delete</button>
+                <button class="btn-cancel" onclick="closeConfirmPopup()">Cancel</button>
+            </div>
         </div>
     </div>
 
@@ -781,6 +1041,132 @@ $base_url = $scheme . '://' . $host . '/mawgifi_system/modules/booking/verify.ph
                 closeQrPopup();
             }
         });
+
+        // ============ EDIT BOOKING FUNCTIONS ============
+
+        // Function to show the edit modal
+        function showEditModal(booking) {
+            // Display booking info
+            document.getElementById('editSlot').textContent = booking.space_number || 'N/A';
+            document.getElementById('editVehicle').textContent = booking.vehicle_model + ' - ' + booking.license_plate;
+            
+            // Set hidden booking ID
+            document.getElementById('editBookingId').value = booking.booking_id;
+            
+            // Parse existing booking date and time
+            const startDate = new Date(booking.booking_start);
+            const endDate = new Date(booking.booking_end);
+            
+            // Format date as YYYY-MM-DD for input
+            const dateStr = startDate.toISOString().split('T')[0];
+            document.getElementById('editDate').value = dateStr;
+            
+            // Format times as HH:MM for inputs
+            const startTimeStr = startDate.toTimeString().slice(0, 5);
+            const endTimeStr = endDate.toTimeString().slice(0, 5);
+            document.getElementById('editStartTime').value = startTimeStr;
+            document.getElementById('editEndTime').value = endTimeStr;
+            
+            // Set minimum date to today
+            const today = new Date().toISOString().split('T')[0];
+            document.getElementById('editDate').min = today;
+            
+            // Show the popup
+            document.getElementById('editPopup').style.display = 'flex';
+        }
+
+        // Function to close the edit modal
+        function closeEditPopup() {
+            document.getElementById('editPopup').style.display = 'none';
+        }
+
+        // Close edit popup when clicking outside
+        document.getElementById('editPopup').addEventListener('click', function(e) {
+            if (e.target === this) {
+                closeEditPopup();
+            }
+        });
+
+        // Handle edit form submission
+        document.getElementById('editBookingForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            const formData = new FormData(this);
+            
+            fetch('update_booking.php', {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    alert('✅ ' + data.message);
+                    closeEditPopup();
+                    // Reload page to show updated booking
+                    location.reload();
+                } else {
+                    alert('❌ ' + data.message);
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('❌ An error occurred. Please try again.');
+            });
+        });
+
+        // ============ DELETE BOOKING FUNCTIONS ============
+
+        // Function to show delete confirmation
+        function showDeleteConfirm(bookingId, slotName) {
+            document.getElementById('deleteBookingId').value = bookingId;
+            document.getElementById('deleteSlotName').textContent = slotName;
+            document.getElementById('confirmPopup').style.display = 'flex';
+        }
+
+        // Function to close delete confirmation
+        function closeConfirmPopup() {
+            document.getElementById('confirmPopup').style.display = 'none';
+        }
+
+        // Close confirm popup when clicking outside
+        document.getElementById('confirmPopup').addEventListener('click', function(e) {
+            if (e.target === this) {
+                closeConfirmPopup();
+            }
+        });
+
+        // Function to confirm and execute delete
+        function confirmDelete() {
+            const bookingId = document.getElementById('deleteBookingId').value;
+            
+            const formData = new FormData();
+            formData.append('booking_id', bookingId);
+            
+            fetch('delete_booking.php', {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    alert('✅ ' + data.message);
+                    closeConfirmPopup();
+                    // Remove the booking card from DOM
+                    const bookingCard = document.getElementById('booking-card-' + bookingId);
+                    if (bookingCard) {
+                        bookingCard.remove();
+                    }
+                    // Reload to update statistics
+                    location.reload();
+                } else {
+                    alert('❌ ' + data.message);
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('❌ An error occurred. Please try again.');
+            });
+        }
     </script>
 </body>
 

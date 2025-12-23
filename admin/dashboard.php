@@ -180,6 +180,10 @@ $username = $_SESSION['username'] ?? 'Administrator';
             border-color: #6b46c1;
         }
 
+        .module-card.m4 {
+            border-color: #48bb78;
+        }
+
         .module-card h3 {
             font-size: 1.5rem;
             margin-bottom: 10px;
@@ -200,7 +204,8 @@ $username = $_SESSION['username'] ?? 'Administrator';
         <div class="nav-links">
             <a href="#" class="active">Dashboard</a>
             <a href="../modules/membership/index.php">Vehicles</a>
-            <a href="../modules/parking/index.php">Parking Areas</a>
+            <a href="../modules/parking/index.php">Parking Map</a>
+            <a href="parking_management.php">Manage Parking</a>
             <a href="../modules/booking/index.php">Bookings</a>
             <a href="../Moudel1/Admin.php?view=profile">Profile</a>
         </div>
@@ -225,8 +230,13 @@ $username = $_SESSION['username'] ?? 'Administrator';
             </a>
 
             <a href="../modules/parking/index.php" class="module-card m2">
-                <h3>Parking Areas</h3>
-                <p>Manage parking areas, spaces, and monitor availability status.</p>
+                <h3>Parking Map</h3>
+                <p>View parking areas map and monitor real-time slot availability.</p>
+            </a>
+
+            <a href="parking_management.php" class="module-card m4">
+                <h3>Manage Parking</h3>
+                <p>Add, edit, and delete parking areas and individual parking spaces.</p>
             </a>
 
             <a href="../modules/booking/index.php" class="module-card m3">

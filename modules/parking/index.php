@@ -27,14 +27,14 @@ $nav_vehicles = $is_student ? 'My Vehicles' : 'Vehicles';
 $nav_parking = $is_student ? 'Find Parking' : 'Parking Areas';
 $nav_bookings = $is_student ? 'My Bookings' : 'Bookings';
 
-// Define parking areas with their slot ranges
-// Area A: slots 1-14, Area B: slots 15-44, etc.
+// Default parking areas with their slot ranges and colors
+// These are the master definitions - actual availability comes from database
 $parking_areas = [
-    'A' => ['start' => 1, 'end' => 14, 'color' => '#667eea', 'name' => 'Area A'],
-    'B' => ['start' => 15, 'end' => 44, 'color' => '#764ba2', 'name' => 'Area B'],
-    'C' => ['start' => 45, 'end' => 65, 'color' => '#48bb78', 'name' => 'Area C'],
-    'D' => ['start' => 66, 'end' => 86, 'color' => '#ed8936', 'name' => 'Area D'],
-    'E' => ['start' => 87, 'end' => 100, 'color' => '#e53e3e', 'name' => 'Area E']
+    'A' => ['start' => 1, 'end' => 14, 'color' => '#667eea', 'name' => 'Area A', 'exists' => false],
+    'B' => ['start' => 15, 'end' => 44, 'color' => '#764ba2', 'name' => 'Area B', 'exists' => false],
+    'C' => ['start' => 45, 'end' => 65, 'color' => '#48bb78', 'name' => 'Area C', 'exists' => false],
+    'D' => ['start' => 66, 'end' => 86, 'color' => '#ed8936', 'name' => 'Area D', 'exists' => false],
+    'E' => ['start' => 87, 'end' => 100, 'color' => '#e53e3e', 'name' => 'Area E', 'exists' => false]
 ];
 
 // Function to determine which area a slot belongs to
@@ -50,8 +50,50 @@ function getAreaForSlot($slot_number, $areas) {
 // Connect to database and get user's vehicles
 $conn = getDBConnection();
 $vehicles = [];
+$available_spaces = []; // Array of space numbers that exist in database
+
 if ($conn) {
-    // Get approved vehicles for the current user
+    // Query 1: Get all existing areas from database and mark them as available
+    $area_sql = "SELECT area_id, area_name FROM ParkingArea";
+    $area_result = $conn->query($area_sql);
+    if ($area_result) {
+        while ($area_row = $area_result->fetch_assoc()) {
+            $area_name = trim($area_row['area_name']);
+            // Extract area code from "Area A" format or just "A"
+            if (preg_match('/^Area\s*([A-E])$/i', $area_name, $matches)) {
+                $area_code = strtoupper($matches[1]);
+            } else {
+                $area_code = strtoupper($area_name);
+            }
+            // Match area code (A, B, C, D, E)
+            if (isset($parking_areas[$area_code])) {
+                $parking_areas[$area_code]['exists'] = true;
+                $parking_areas[$area_code]['area_id'] = $area_row['area_id'];
+            }
+        }
+    }
+    
+    // Query 2: Get all existing parking spaces from database
+    $space_sql = "SELECT ps.space_number, pa.area_name 
+                  FROM ParkingSpace ps 
+                  JOIN ParkingArea pa ON ps.area_id = pa.area_id";
+    $space_result = $conn->query($space_sql);
+    if ($space_result) {
+        while ($space_row = $space_result->fetch_assoc()) {
+            // Extract slot number from space_number
+            // Format can be "A-01", "A-1", "1", "01", etc.
+            $space_num = $space_row['space_number'];
+            if (preg_match('/[A-E]-(\d+)/i', $space_num, $matches)) {
+                // Format: A-01, B-15, etc.
+                $available_spaces[] = (int)$matches[1];
+            } elseif (preg_match('/^(\d+)$/', $space_num, $matches)) {
+                // Format: just a number like "1", "15"
+                $available_spaces[] = (int)$matches[1];
+            }
+        }
+    }
+    
+    // Query 3: Get approved vehicles for the current user
     $sql = "SELECT vehicle_id, vehicle_type, vehicle_model, license_plate 
             FROM Vehicle 
             WHERE user_id = ? AND status = 'approved'";
@@ -297,6 +339,26 @@ if ($conn) {
             fill: #f56565 !important;
             cursor: not-allowed;
             pointer-events: none;
+        }
+
+        /* Unavailable slot styling - areas/spaces not in database */
+        .parking-slot.unavailable {
+            fill: #1a1a1a !important;
+            cursor: not-allowed;
+            pointer-events: none;
+            opacity: 0.7;
+        }
+
+        /* Unavailable slot - no hover effect */
+        .parking-slot.unavailable:hover {
+            opacity: 0.7;
+            stroke: none;
+            stroke-width: 0;
+        }
+
+        /* Legend item for unavailable areas */
+        .unavailable-legend {
+            opacity: 0.7;
         }
 
         /* Container for the SVG parking map */
@@ -578,14 +640,23 @@ if ($conn) {
             <!-- Area Color Legend -->
             <div class="area-legend">
                 <?php foreach ($parking_areas as $code => $area): ?>
-                    <div class="legend-item">
-                        <div class="legend-color" style="background: <?php echo $area['color']; ?>;"></div>
-                        <span><?php echo $area['name']; ?> (Slots <?php echo $area['start']; ?>-<?php echo $area['end']; ?>)</span>
+                    <div class="legend-item <?php echo !$area['exists'] ? 'unavailable-legend' : ''; ?>">
+                        <div class="legend-color" style="background: <?php echo $area['exists'] ? $area['color'] : '#1a1a1a'; ?>;"></div>
+                        <span>
+                            <?php echo $area['name']; ?> (Slots <?php echo $area['start']; ?>-<?php echo $area['end']; ?>)
+                            <?php if (!$area['exists']): ?>
+                                <em style="color: #999; font-size: 0.8em;">(Not Available)</em>
+                            <?php endif; ?>
+                        </span>
                     </div>
                 <?php endforeach; ?>
                 <div class="legend-item">
                     <div class="legend-color" style="background: #f56565;"></div>
-                    <span>Booked/Unavailable</span>
+                    <span>Booked</span>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-color" style="background: #1a1a1a;"></div>
+                    <span>Not in System</span>
                 </div>
             </div>
         </div>
@@ -681,14 +752,19 @@ if ($conn) {
         // Wait for the page to load completely
         document.addEventListener('DOMContentLoaded', function() {
             
-            // Define parking areas with their slot ranges and colors
-            const parkingAreas = {
-                'A': { start: 1, end: 14, color: '#667eea', name: 'Area A' },
-                'B': { start: 15, end: 44, color: '#764ba2', name: 'Area B' },
-                'C': { start: 45, end: 65, color: '#48bb78', name: 'Area C' },
-                'D': { start: 66, end: 86, color: '#ed8936', name: 'Area D' },
-                'E': { start: 87, end: 100, color: '#e53e3e', name: 'Area E' }
-            };
+            // Define parking areas with their slot ranges, colors, and existence status from database
+            const parkingAreas = <?php echo json_encode(array_map(function($area) {
+                return [
+                    'start' => $area['start'],
+                    'end' => $area['end'],
+                    'color' => $area['color'],
+                    'name' => $area['name'],
+                    'exists' => $area['exists']
+                ];
+            }, $parking_areas)); ?>;
+
+            // Array of available space numbers from database (spaces that exist)
+            const availableSpaces = <?php echo json_encode($available_spaces); ?>;
 
             // Array of booked slot numbers from PHP
             const bookedSlots = <?php echo json_encode($booked_slots); ?>;
@@ -700,7 +776,19 @@ if ($conn) {
                         return { code: code, ...area };
                     }
                 }
-                return { code: 'A', ...parkingAreas['A'] };
+                return { code: 'A', ...parkingAreas['A'], exists: false };
+            }
+
+            // Function to check if a slot is available in the database
+            function isSlotAvailable(slotNum) {
+                // Check if the space exists in the database
+                return availableSpaces.includes(slotNum);
+            }
+
+            // Function to check if an area exists in the database
+            function isAreaAvailable(slotNum) {
+                const areaInfo = getAreaForSlot(slotNum);
+                return areaInfo.exists === true;
             }
 
             // Get all parking slot elements from the SVG
@@ -716,7 +804,27 @@ if ($conn) {
                 // Get the area information for this slot
                 const areaInfo = getAreaForSlot(slotNum);
                 
-                // Set the slot color based on its area
+                // First check: Is the area available in database?
+                // If area doesn't exist in database, show as black (unavailable)
+                if (!areaInfo.exists) {
+                    slot.classList.add('unavailable');
+                    slot.setAttribute('fill', '#1a1a1a'); // Black for unavailable area
+                    slot.style.cursor = 'not-allowed';
+                    slot.style.pointerEvents = 'none';
+                    return; // Skip further processing
+                }
+                
+                // Second check: Is the specific slot available in database?
+                // If slot doesn't exist in database, show as dark gray
+                if (!isSlotAvailable(slotNum)) {
+                    slot.classList.add('unavailable');
+                    slot.setAttribute('fill', '#333333'); // Dark gray for unavailable slot
+                    slot.style.cursor = 'not-allowed';
+                    slot.style.pointerEvents = 'none';
+                    return; // Skip further processing
+                }
+                
+                // Set the slot color based on its area (slot is available)
                 slot.setAttribute('fill', areaInfo.color);
                 
                 // Check if this slot is already booked
@@ -727,8 +835,8 @@ if ($conn) {
 
                 // Add click event listener for available slots
                 slot.addEventListener('click', function() {
-                    // Don't allow clicking on taken slots
-                    if (this.classList.contains('taken')) return;
+                    // Don't allow clicking on taken or unavailable slots
+                    if (this.classList.contains('taken') || this.classList.contains('unavailable')) return;
 
                     // Remove selection from previously selected slot
                     if (selectedSlot) {
