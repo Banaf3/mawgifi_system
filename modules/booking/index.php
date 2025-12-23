@@ -6,19 +6,42 @@ requireLogin();
 
 $username = $_SESSION['username'] ?? 'User';
 $user_id = getCurrentUserId();
+$user_type = $_SESSION['user_type'] ?? 'user';
+$is_admin_or_staff = (strtolower($user_type) === 'admin' || strtolower($user_type) === 'staff');
+$base_url = (isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on' ? "https" : "http") . "://" . $_SERVER['HTTP_HOST'] . "/mawgifi_system";
 
 $conn = getDBConnection();
-$stmt = $conn->prepare(
-    "SELECT b.*, ps.space_number, v.license_plate, v.vehicle_model,
-            DATE_FORMAT(b.booking_start, '%M %d, %Y') as booking_date,
-            DATE_FORMAT(b.booking_start, '%h:%i %p') as start_time,
-            DATE_FORMAT(b.booking_end, '%h:%i %p') as end_time
-     FROM Booking b
-     JOIN ParkingSpace ps ON b.Space_id = ps.Space_id
-     JOIN Vehicle v ON b.vehicle_id = v.vehicle_id
-     WHERE v.user_id = ? ORDER BY b.booking_start DESC"
-);
-$stmt->bind_param("i", $user_id);
+
+if ($is_admin_or_staff) {
+    // Fetch ALL bookings for Admin/Staff
+    $stmt = $conn->prepare(
+        "SELECT b.*, ps.space_number, pa.area_name, v.license_plate, v.vehicle_model, u.UserName as student_name,
+                DATE_FORMAT(b.booking_start, '%M %d, %Y') as booking_date,
+                DATE_FORMAT(b.booking_start, '%h:%i %p') as start_time,
+                DATE_FORMAT(b.booking_end, '%h:%i %p') as end_time
+         FROM Booking b
+         JOIN ParkingSpace ps ON b.Space_id = ps.Space_id
+         LEFT JOIN ParkingArea pa ON ps.area_id = pa.area_id
+         JOIN Vehicle v ON b.vehicle_id = v.vehicle_id
+         JOIN User u ON v.user_id = u.user_id
+         ORDER BY b.booking_start DESC"
+    );
+} else {
+    // Fetch ONLY user's bookings
+    $stmt = $conn->prepare(
+        "SELECT b.*, ps.space_number, pa.area_name, v.license_plate, v.vehicle_model,
+                DATE_FORMAT(b.booking_start, '%M %d, %Y') as booking_date,
+                DATE_FORMAT(b.booking_start, '%h:%i %p') as start_time,
+                DATE_FORMAT(b.booking_end, '%h:%i %p') as end_time
+         FROM Booking b
+         JOIN ParkingSpace ps ON b.Space_id = ps.Space_id
+         LEFT JOIN ParkingArea pa ON ps.area_id = pa.area_id
+         JOIN Vehicle v ON b.vehicle_id = v.vehicle_id
+         WHERE v.user_id = ? ORDER BY b.booking_start DESC"
+    );
+    $stmt->bind_param("i", $user_id);
+}
+
 $stmt->execute();
 $bookings = $stmt->get_result()->fetch_all(MYSQLI_ASSOC);
 $stmt->close();
@@ -44,82 +67,57 @@ $conn->close();
             align-items: center;
         }
 
-        .slot-badge {
-            background: var(--primary-grad);
-            color: #fff;
-            padding: 15px 20px;
-            border-radius: 10px;
-            text-align: center;
-            min-width: 80px;
-        }
-
-        .slot-badge .num {
-            font-size: 1.5rem;
-            font-weight: bold;
-        }
-
-        .slot-badge .label {
-            font-size: 0.7rem;
-            opacity: 0.9;
-        }
-
         .booking-info {
             flex: 1;
         }
 
         .booking-info h3 {
             font-size: 1rem;
-            margin-bottom: 5px;
         }
 
-        .booking-info p {
-            font-size: 0.85rem;
+        .booking-slot {
+            font-size: 1.5rem;
+            font-weight: bold;
+            color: #2d3748;
+        }
+
+        .booking-details {
             color: #718096;
-            margin: 3px 0;
+            font-size: 0.9rem;
+            margin: 4px 0;
         }
 
-        .qr-preview {
-            text-align: center;
+        .booking-time {
+            font-size: 0.85rem;
+            color: #4a5568;
+            background: #f7fafc;
+            padding: 4px 8px;
+            border-radius: 4px;
+            display: inline-block;
+            margin-top: 5px;
         }
 
-        .qr-preview img {
-            width: 70px;
-            height: 70px;
-            border-radius: 6px;
-        }
-
-        .qr-preview p {
-            font-size: 0.7rem;
-            color: #888;
-            margin-top: 4px;
-        }
-
-        .btn-action {
-            background: none;
+        .status-badge {
             padding: 6px 12px;
-            border-radius: 6px;
-            cursor: pointer;
-            font-size: 0.8rem;
-            margin-top: 8px;
-            margin-right: 5px;
+            border-radius: 20px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            text-transform: uppercase;
         }
 
-        .btn-update {
-            border: 1px solid #667eea;
-            color: #667eea;
+        .status-badge.active {
+            background: #c6f6d5;
+            color: #276749;
         }
 
-        .btn-update:hover {
-            background: #e0e7ff;
+        .status-badge.upcoming {
+            background: #feebc8;
+            color: #c05621;
         }
 
-        .btn-cancel {
-            border: 1px solid #e53e3e;
-            color: #e53e3e;
-        }
-
-        .btn-cancel:hover {
-            background: #fed7d7;
+        .status-badge.completed {
+            background: #e2e8f0;
+            color: #4a5568;
         }
 
         .empty-state {
@@ -162,62 +160,273 @@ $conn->close();
             max-width: 400px;
         }
 
-        .modal h3 {
-            margin-bottom: 20px;
-        }
-
-        .modal .form-group {
-            margin-bottom: 15px;
-        }
-
-        .modal label {
-            display: block;
-            font-size: 0.85rem;
-            font-weight: 600;
-            margin-bottom: 5px;
-        }
-
-        .time-row {
-            display: flex;
-            gap: 10px;
-        }
-
-        .time-row select,
-        .modal input {
-            width: 100%;
-            padding: 10px;
-            border: 1px solid #e2e8f0;
-            border-radius: 8px;
-        }
-
-        .time-row select {
-            flex: 1;
-        }
-
-        .modal-btns {
-            display: flex;
-            gap: 10px;
-            margin-top: 20px;
-        }
-
-        .modal-btns button {
-            flex: 1;
-            padding: 12px;
-            border-radius: 8px;
-            font-weight: 600;
-            cursor: pointer;
-        }
-
         .btn-modal-cancel {
             background: #f7fafc;
             border: 1px solid #e2e8f0;
             color: #2d3748;
+            padding: 10px 20px;
+            border-radius: 8px;
+            cursor: pointer;
         }
 
         .btn-modal-save {
             background: var(--primary-grad);
             border: none;
             color: #fff;
+            padding: 12px 30px;
+            border-radius: 10px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            margin: 5px;
+        }
+
+        /* Action buttons container */
+        .booking-actions {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+
+        .qr-btn {
+            background: #edf2f7;
+            color: #2d3748;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 0.85rem;
+        }
+
+        /* Edit button styling */
+        .edit-btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 0.85rem;
+            transition: transform 0.2s, opacity 0.2s;
+        }
+
+        .edit-btn:hover {
+            transform: scale(1.05);
+            opacity: 0.9;
+        }
+
+        /* Delete button styling */
+        .delete-btn {
+            background: linear-gradient(135deg, #e53e3e 0%, #c53030 100%);
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 0.85rem;
+            transition: transform 0.2s, opacity 0.2s;
+        }
+
+        .delete-btn:hover {
+            transform: scale(1.05);
+            opacity: 0.9;
+        }
+
+        /* Edit modal styling */
+        .edit-popup {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .edit-card {
+            background: white;
+            padding: 40px;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            max-width: 450px;
+            width: 90%;
+        }
+
+        .edit-card h2 {
+            margin-bottom: 20px;
+            color: var(--text-dark);
+            text-align: center;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: var(--text-dark);
+        }
+
+        .form-group input {
+            width: 100%;
+            padding: 12px 15px;
+            border: 2px solid #e2e8f0;
+            border-radius: 10px;
+            font-size: 1rem;
+            transition: border-color 0.3s;
+        }
+
+        .form-group input:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .booking-info-display {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+        }
+
+        .booking-info-display p {
+            margin: 5px 0;
+            color: var(--text-dark);
+        }
+
+        .booking-info-display strong {
+            color: var(--text-light);
+        }
+
+        .btn-save {
+            background: linear-gradient(135deg, #48bb78 0%, #38a169 100%);
+            color: white;
+            border: none;
+            padding: 12px 30px;
+            border-radius: 10px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            margin: 5px;
+            transition: transform 0.2s;
+        }
+
+        .btn-save:hover {
+            transform: scale(1.02);
+        }
+
+        .btn-cancel {
+            background: #e2e8f0;
+            color: var(--text-dark);
+            border: none;
+            padding: 12px 30px;
+            border-radius: 10px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            margin: 5px;
+        }
+
+        .edit-buttons {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            margin-top: 20px;
+        }
+
+        /* Confirm delete modal */
+        .confirm-popup {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 1001;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .confirm-card {
+            background: white;
+            padding: 40px;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            text-align: center;
+            max-width: 400px;
+            width: 90%;
+        }
+
+        .confirm-card h2 {
+            color: #e53e3e;
+            margin-bottom: 15px;
+        }
+
+        .confirm-card p {
+            color: var(--text-light);
+            margin-bottom: 25px;
+        }
+
+        .btn-confirm-delete {
+            background: linear-gradient(135deg, #e53e3e 0%, #c53030 100%);
+            color: white;
+            border: none;
+            padding: 12px 30px;
+            border-radius: 10px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            margin: 5px;
+        }
+
+        /* Print styles - only show QR card when printing */
+        @media print {
+            body * {
+                visibility: hidden;
+            }
+
+            .qr-card,
+            .qr-card * {
+                visibility: visible;
+            }
+
+            .qr-card {
+                position: absolute;
+                left: 50%;
+                top: 50%;
+                transform: translate(-50%, -50%);
+            }
+
+            .btn-print,
+            .btn-close {
+                display: none !important;
+            }
+        }
+
+        /* Responsive design for smaller screens */
+        @media (max-width: 768px) {
+            .stats-container {
+                grid-template-columns: repeat(2, 1fr);
+            }
+
+            .booking-card {
+                flex-direction: column;
+                text-align: center;
+                gap: 15px;
+            }
+
+            .qr-btn {
+                margin-left: 0;
+                margin-top: 10px;
+            }
         }
     </style>
 </head>
@@ -230,7 +439,8 @@ $conn->close();
                 <!-- Admin Navbar -->
                 <a href="../../Moudel1/Admin.php?view=dashboard">Dashboard</a>
                 <a href="../membership/index.php">Vehicles</a>
-                <a href="../parking/index.php">Parking Areas</a>
+                <a href="../parking/index.php">Parking Map</a>
+                <a href="../../admin/parking_management.php">Manage Parking</a>
                 <a href="index.php" class="active">Bookings</a>
                 <a href="../../Moudel1/Admin.php?view=register">Register Student</a>
                 <a href="../../Moudel1/Admin.php?view=manage">Manage Profile</a>
@@ -266,116 +476,340 @@ $conn->close();
                 <span>📭</span>
                 <p>No bookings yet. <a href="../parking/index.php">Find a parking slot</a></p>
             </div>
-        <?php else: ?>
-            <?php foreach ($bookings as $b): ?>
-                <div class="booking-card">
-                    <div class="slot-badge">
-                        <div class="label">SLOT</div>
-                        <div class="num">#<?= htmlspecialchars($b['space_number']) ?></div>
-                    </div>
-                    <div class="booking-info">
-                        <h3><?= htmlspecialchars($b['vehicle_model']) ?> • <?= htmlspecialchars($b['license_plate']) ?></h3>
-                        <p>📅 <?= $b['booking_date'] ?></p>
-                        <p>🕐 <?= $b['start_time'] ?> - <?= $b['end_time'] ?></p>
-                        <?php if ($b['status'] === 'pending' && strtotime($b['booking_start']) > time()): ?>
-                            <button class="btn-action btn-update"
-                                onclick="openModal(<?= $b['booking_id'] ?>, '<?= date('Y-m-d', strtotime($b['booking_start'])) ?>', <?= date('H', strtotime($b['booking_start'])) ?>, <?= date('H', strtotime($b['booking_end'])) ?>)">Update</button>
-                            <button class="btn-action btn-cancel" onclick="cancelBooking(<?= $b['booking_id'] ?>)">Cancel</button>
-                        <?php endif; ?>
-                    </div>
-                    <span
-                        class="booking-status status-<?= $b['status'] ?>"><?= ucfirst(str_replace('_', ' ', $b['status'])) ?></span>
-                    <div class="qr-preview">
-                        <img src="https://api.qrserver.com/v1/create-qr-code/?size=70x70&data=<?= urlencode($b['booking_qr_code']) ?>"
-                            alt="QR">
-                        <p>Scan at slot</p>
-                    </div>
-                </div>
-            <?php endforeach; ?>
+        <?php endif; ?>
+
+        <!-- Bookings List -->
+        <?php if (!empty($bookings)): ?>
+            <div class="bookings-container">
+                <?php
+                // Group bookings by status
+                $grouped_bookings = ['active' => [], 'upcoming' => [], 'completed' => []];
+                foreach ($bookings as $booking) {
+                    $grouped_bookings[$booking['status']][] = $booking;
+                }
+                ?>
+
+                <?php if (count($grouped_bookings['active']) > 0): ?>
+                    <h2 class="section-title">🟢 Active Bookings</h2>
+                    <?php foreach ($grouped_bookings['active'] as $booking): ?>
+                        <div class="booking-card">
+                            <div class="booking-info">
+                                <div class="booking-slot">
+                                    <?php echo htmlspecialchars($booking['space_number'] ?? 'N/A'); ?>
+                                </div>
+                                <div class="booking-details">
+                                    <?php if (!empty($booking['student_name'])): ?>
+                                        <div style="font-weight:600;color:#667eea;margin-bottom:2px;">User:
+                                            <?php echo htmlspecialchars($booking['student_name']); ?></div>
+                                    <?php endif; ?>
+                                    <?php echo htmlspecialchars($booking['area_name'] ?? 'Unknown Area'); ?> •
+                                    <?php echo htmlspecialchars($booking['vehicle_model'] . ' - ' . $booking['license_plate']); ?>
+                                </div>
+                                <div class="booking-time">
+                                    📅 <?php echo date('F j, Y', strtotime($booking['booking_start'])); ?> •
+                                    🕐 <?php echo date('g:i A', strtotime($booking['booking_start'])); ?> -
+                                    <?php echo date('g:i A', strtotime($booking['booking_end'])); ?>
+                                </div>
+                            </div>
+                            <span class="status-badge active">Active</span>
+                            <div class="booking-actions">
+                                <button class="qr-btn"
+                                    onclick="showQRCode(<?php echo htmlspecialchars(json_encode($booking)); ?>, '<?php echo $base_url; ?>')">
+                                    📱 View QR
+                                </button>
+                            </div>
+                        </div>
+                    <?php endforeach; ?>
+                <?php endif; ?>
+
+                <?php if (count($grouped_bookings['upcoming']) > 0): ?>
+                    <h2 class="section-title" style="margin-top: 30px;">🟠 Upcoming Bookings</h2>
+                    <?php foreach ($grouped_bookings['upcoming'] as $booking): ?>
+                        <div class="booking-card" id="booking-card-<?php echo $booking['booking_id']; ?>">
+                            <div class="booking-info">
+                                <div class="booking-slot">
+                                    <?php echo htmlspecialchars($booking['space_number'] ?? 'N/A'); ?>
+                                </div>
+                                <div class="booking-details">
+                                    <?php if (!empty($booking['student_name'])): ?>
+                                        <div style="font-weight:600;color:#667eea;margin-bottom:2px;">User:
+                                            <?php echo htmlspecialchars($booking['student_name']); ?></div>
+                                    <?php endif; ?>
+                                    <?php echo htmlspecialchars($booking['area_name'] ?? 'Unknown Area'); ?> •
+                                    <?php echo htmlspecialchars($booking['vehicle_model'] . ' - ' . $booking['license_plate']); ?>
+                                </div>
+                                <div class="booking-time">
+                                    📅 <?php echo date('F j, Y', strtotime($booking['booking_start'])); ?> •
+                                    🕐 <?php echo date('g:i A', strtotime($booking['booking_start'])); ?> -
+                                    <?php echo date('g:i A', strtotime($booking['booking_end'])); ?>
+                                </div>
+                            </div>
+                            <span class="status-badge upcoming">Upcoming</span>
+                            <div class="booking-actions">
+                                <button class="qr-btn"
+                                    onclick="showQRCode(<?php echo htmlspecialchars(json_encode($booking)); ?>, '<?php echo $base_url; ?>')">
+                                    📱 QR
+                                </button>
+                                <button class="edit-btn"
+                                    onclick="showEditModal(<?php echo htmlspecialchars(json_encode($booking)); ?>)">
+                                    ✏️ Edit
+                                </button>
+                                <button class="delete-btn"
+                                    onclick="showDeleteConfirm(<?php echo $booking['booking_id']; ?>, '<?php echo htmlspecialchars($booking['space_number'] ?? 'N/A'); ?>')">
+                                    🗑️ Delete
+                                </button>
+                            </div>
+                        </div>
+                    <?php endforeach; ?>
+                <?php endif; ?>
+
+                <?php if (count($grouped_bookings['completed']) > 0): ?>
+                    <h2 class="section-title" style="margin-top: 30px;">⚫ Past Bookings</h2>
+                    <?php foreach ($grouped_bookings['completed'] as $booking): ?>
+                        <div class="booking-card" id="booking-card-<?php echo $booking['booking_id']; ?>">
+                            <div class="booking-info">
+                                <div class="booking-slot">
+                                    <?php echo htmlspecialchars($booking['space_number'] ?? 'N/A'); ?>
+                                </div>
+                                <div class="booking-details">
+                                    <?php if (!empty($booking['student_name'])): ?>
+                                        <div style="font-weight:600;color:#667eea;margin-bottom:2px;">User:
+                                            <?php echo htmlspecialchars($booking['student_name']); ?></div>
+                                    <?php endif; ?>
+                                    <?php echo htmlspecialchars($booking['area_name'] ?? 'Unknown Area'); ?> •
+                                    <?php echo htmlspecialchars($booking['vehicle_model'] . ' - ' . $booking['license_plate']); ?>
+                                </div>
+                                <div class="booking-time">
+                                    📅 <?php echo date('F j, Y', strtotime($booking['booking_start'])); ?> •
+                                    🕐 <?php echo date('g:i A', strtotime($booking['booking_start'])); ?> -
+                                    <?php echo date('g:i A', strtotime($booking['booking_end'])); ?>
+                                </div>
+                            </div>
+                            <span class="status-badge completed">Completed</span>
+                            <div class="booking-actions">
+                                <button class="delete-btn"
+                                    onclick="showDeleteConfirm(<?php echo $booking['booking_id']; ?>, '<?php echo htmlspecialchars($booking['space_number'] ?? 'N/A'); ?>')">
+                                    🗑️ Delete
+                                </button>
+                            </div>
+                        </div>
+                    <?php endforeach; ?>
+                <?php endif; ?>
+            </div>
         <?php endif; ?>
     </div>
 
-    <div class="modal-overlay" id="modal" onclick="if(event.target===this)closeModal()">
-        <div class="modal">
-            <h3>📝 Update Booking</h3>
-            <input type="hidden" id="bookingId">
-            <div class="form-group">
-                <label>Date</label>
-                <input type="date" id="updateDate" min="<?= date('Y-m-d') ?>">
+    <!-- QR Code Popup -->
+    <div class="modal-overlay" id="qrPopup">
+        <div class="modal" style="text-align:center;">
+            <h3>📱 Booking QR</h3>
+            <div id="qrCodeContainer" style="margin: 20px 0;"></div>
+            <p style="margin-top:15px;color:#666;">Scan at the parking slot</p>
+            <button class="btn-modal-cancel" onclick="closeQrPopup()"
+                style="margin-top:20px; width: 100%;">Close</button>
+        </div>
+    </div>
+
+    <!-- Edit Booking Popup -->
+    <div class="edit-popup" id="editPopup">
+        <div class="edit-card">
+            <h2>✏️ Edit Booking</h2>
+
+            <div class="booking-info-display">
+                <p><strong>Slot:</strong> <span id="editSlot">--</span></p>
+                <p><strong>Vehicle:</strong> <span id="editVehicle">--</span></p>
             </div>
-            <div class="form-group">
-                <label>Start Time</label>
-                <div class="time-row">
-                    <select id="startHour"><?php for ($i = 1; $i <= 12; $i++)
-                        echo "<option value='$i'>$i</option>"; ?></select>
-                    <select id="startAmPm">
-                        <option>AM</option>
-                        <option>PM</option>
-                    </select>
+
+            <form id="editBookingForm">
+                <input type="hidden" id="editBookingId" name="booking_id">
+
+                <div class="form-group">
+                    <label for="editDate">📅 Booking Date</label>
+                    <input type="date" id="editDate" name="booking_date" required>
                 </div>
-            </div>
-            <div class="form-group">
-                <label>End Time</label>
-                <div class="time-row">
-                    <select id="endHour"><?php for ($i = 1; $i <= 12; $i++)
-                        echo "<option value='$i'>$i</option>"; ?></select>
-                    <select id="endAmPm">
-                        <option>AM</option>
-                        <option>PM</option>
-                    </select>
+
+                <div class="form-group">
+                    <label for="editStartTime">🕐 Start Time</label>
+                    <input type="time" id="editStartTime" name="start_time" required>
                 </div>
-            </div>
-            <div class="modal-btns">
-                <button class="btn-modal-cancel" onclick="closeModal()">Cancel</button>
-                <button class="btn-modal-save" onclick="saveUpdate()">Save</button>
+
+                <div class="form-group">
+                    <label for="editEndTime">🕐 End Time</label>
+                    <input type="time" id="editEndTime" name="end_time" required>
+                </div>
+
+                <div class="edit-buttons">
+                    <button type="submit" class="btn-save">💾 Save Changes</button>
+                    <button type="button" class="btn-cancel" onclick="closeEditPopup()">Cancel</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Delete Confirmation Popup -->
+    <div class="confirm-popup" id="confirmPopup">
+        <div class="confirm-card">
+            <h2>🗑️ Delete Booking</h2>
+            <p>Are you sure you want to delete the booking for slot <strong id="deleteSlotName">--</strong>?</p>
+            <p style="font-size: 0.85rem;">This action cannot be undone.</p>
+            <input type="hidden" id="deleteBookingId">
+            <div class="edit-buttons">
+                <button class="btn-confirm-delete" onclick="confirmDelete()">🗑️ Delete</button>
+                <button class="btn-cancel" onclick="closeConfirmPopup()">Cancel</button>
             </div>
         </div>
     </div>
 
     <script>
-        const modal = document.getElementById('modal');
+        // Close popup when clicking outside the card
+        document.getElementById('qrPopup').addEventListener('click', function (e) {
+            if (e.target === this) {
+                closeQrPopup();
+            }
+        });
 
-        function openModal(id, date, sh, eh) {
-            document.getElementById('bookingId').value = id;
-            document.getElementById('updateDate').value = date;
-            document.getElementById('startAmPm').value = sh >= 12 ? 'PM' : 'AM';
-            document.getElementById('endAmPm').value = eh >= 12 ? 'PM' : 'AM';
-            document.getElementById('startHour').value = sh > 12 ? sh - 12 : (sh === 0 ? 12 : sh);
-            document.getElementById('endHour').value = eh > 12 ? eh - 12 : (eh === 0 ? 12 : eh);
-            modal.classList.add('active');
+        function showQRCode(booking, baseUrl) {
+            const qrData = encodeURIComponent(
+                baseUrl + '/modules/booking/scan.php?slot=' + booking.space_number
+            );
+            const img = document.createElement('img');
+            img.src = 'https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=' + qrData;
+            img.style.borderRadius = '8px';
+            const container = document.getElementById('qrCodeContainer');
+            container.innerHTML = '';
+            container.appendChild(img);
+            document.getElementById('qrPopup').classList.add('active');
         }
 
-        function closeModal() { modal.classList.remove('active'); }
-
-        function getTime(hId, apId) {
-            let h = parseInt(document.getElementById(hId).value);
-            const ap = document.getElementById(apId).value;
-            if (ap === 'PM' && h < 12) h += 12;
-            if (ap === 'AM' && h === 12) h = 0;
-            return h.toString().padStart(2, '0') + ':00';
+        function closeQrPopup() {
+            document.getElementById('qrPopup').classList.remove('active');
         }
 
-        function saveUpdate() {
-            const date = document.getElementById('updateDate').value;
-            if (!date) { alert('Select a date'); return; }
+        // ============ EDIT BOOKING FUNCTIONS ============
+
+        // Function to show the edit modal
+        function showEditModal(booking) {
+            // Display booking info
+            document.getElementById('editSlot').textContent = booking.space_number || 'N/A';
+            document.getElementById('editVehicle').textContent = booking.vehicle_model + ' - ' + booking.license_plate;
+
+            // Set hidden booking ID
+            document.getElementById('editBookingId').value = booking.booking_id;
+
+            // Parse existing booking date and time
+            const startDate = new Date(booking.booking_start);
+            const endDate = new Date(booking.booking_end);
+
+            // Format date as YYYY-MM-DD for input
+            const dateStr = startDate.toISOString().split('T')[0];
+            document.getElementById('editDate').value = dateStr;
+
+            // Format times as HH:MM for inputs
+            const startTimeStr = startDate.toTimeString().slice(0, 5);
+            const endTimeStr = endDate.toTimeString().slice(0, 5);
+            document.getElementById('editStartTime').value = startTimeStr;
+            document.getElementById('editEndTime').value = endTimeStr;
+
+            // Set minimum date to today
+            const today = new Date().toISOString().split('T')[0];
+            document.getElementById('editDate').min = today;
+
+            // Show the popup
+            document.getElementById('editPopup').style.display = 'flex';
+        }
+
+        // Function to close the edit modal
+        function closeEditPopup() {
+            document.getElementById('editPopup').style.display = 'none';
+        }
+
+        // Close edit popup when clicking outside
+        document.getElementById('editPopup').addEventListener('click', function (e) {
+            if (e.target === this) {
+                closeEditPopup();
+            }
+        });
+
+        // Handle edit form submission
+        document.getElementById('editBookingForm').addEventListener('submit', function (e) {
+            e.preventDefault();
+
+            const formData = new FormData(this);
+            const data = {};
+            formData.forEach((value, key) => data[key] = value);
 
             fetch('api/update_booking.php', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    booking_id: document.getElementById('bookingId').value,
-                    date, start_time: getTime('startHour', 'startAmPm'), end_time: getTime('endHour', 'endAmPm')
+                body: JSON.stringify(data)
+            })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        alert('✅ ' + data.message);
+                        closeEditPopup();
+                        // Reload page to show updated booking
+                        location.reload();
+                    } else {
+                        alert('❌ ' + data.message);
+                    }
                 })
-            }).then(r => r.json()).then(d => d.success ? location.reload() : alert(d.message));
+                .catch(error => {
+                    console.error('Error:', error);
+                    alert('❌ An error occurred. Please try again.');
+                });
+        });
+
+        // ============ DELETE BOOKING FUNCTIONS ============
+
+        // Function to show delete confirmation
+        function showDeleteConfirm(bookingId, slotName) {
+            document.getElementById('deleteBookingId').value = bookingId;
+            document.getElementById('deleteSlotName').textContent = slotName;
+            document.getElementById('confirmPopup').style.display = 'flex';
         }
 
-        function cancelBooking(id) {
-            if (!confirm('Cancel this booking?')) return;
-            fetch('api/cancel_booking.php', {
+        // Function to close delete confirmation
+        function closeConfirmPopup() {
+            document.getElementById('confirmPopup').style.display = 'none';
+        }
+
+        // Close confirm popup when clicking outside
+        document.getElementById('confirmPopup').addEventListener('click', function (e) {
+            if (e.target === this) {
+                closeConfirmPopup();
+            }
+        });
+
+        // Function to confirm and execute delete
+        function confirmDelete() {
+            const bookingId = document.getElementById('deleteBookingId').value;
+
+            fetch('api/delete_booking.php', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ booking_id: id })
-            }).then(r => r.json()).then(d => d.success ? location.reload() : alert(d.message));
+                body: JSON.stringify({ booking_id: bookingId })
+            })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        alert('✅ ' + data.message);
+                        closeConfirmPopup();
+                        // Remove the booking card from DOM
+                        const bookingCard = document.getElementById('booking-card-' + bookingId);
+                        if (bookingCard) {
+                            bookingCard.remove();
+                        }
+                        // Reload to update statistics
+                        location.reload();
+                    } else {
+                        alert('❌ ' + data.message);
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    alert('❌ An error occurred. Please try again.');
+                });
         }
     </script>
 </body>

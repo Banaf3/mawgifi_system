@@ -9,14 +9,78 @@ $user_id = getCurrentUserId();
 $user_type = $_SESSION['user_type'] ?? 'user';
 $is_student = ($user_type === 'user');
 
-// Get user's approved vehicles (only for students)
+// Default parking areas with their slot ranges and colors
+// These are the master definitions - actual availability comes from database
+$parking_areas = [
+    'A' => ['start' => 1, 'end' => 14, 'color' => '#667eea', 'name' => 'Area A', 'exists' => false],
+    'B' => ['start' => 15, 'end' => 44, 'color' => '#764ba2', 'name' => 'Area B', 'exists' => false],
+    'C' => ['start' => 45, 'end' => 65, 'color' => '#48bb78', 'name' => 'Area C', 'exists' => false],
+    'D' => ['start' => 66, 'end' => 86, 'color' => '#ed8936', 'name' => 'Area D', 'exists' => false],
+    'E' => ['start' => 87, 'end' => 100, 'color' => '#e53e3e', 'name' => 'Area E', 'exists' => false]
+];
+
+// Function to determine which area a slot belongs to
+function getAreaForSlot($slot_number, $areas)
+{
+    foreach ($areas as $area_code => $area_info) {
+        if ($slot_number >= $area_info['start'] && $slot_number <= $area_info['end']) {
+            return $area_code;
+        }
+    }
+    return 'A'; // Default to Area A if not found
+}
+
+// Connect to database and get user's vehicles
 $conn = getDBConnection();
 $vehicles = [];
-if ($is_student) {
-    $stmt = $conn->prepare(
-        "SELECT vehicle_id, vehicle_model, license_plate 
-         FROM Vehicle WHERE user_id = ? AND status = 'approved'"
-    );
+$available_spaces = []; // Array of space numbers that exist in database
+
+if ($conn) {
+    // Query 1: Get all existing areas from database and mark them as available
+    $area_sql = "SELECT area_id, area_name FROM ParkingArea";
+    $area_result = $conn->query($area_sql);
+    if ($area_result) {
+        while ($area_row = $area_result->fetch_assoc()) {
+            $area_name = trim($area_row['area_name']);
+            // Extract area code from "Area A" format or just "A"
+            if (preg_match('/^Area\s*([A-E])$/i', $area_name, $matches)) {
+                $area_code = strtoupper($matches[1]);
+            } else {
+                $area_code = strtoupper($area_name);
+            }
+            // Match area code (A, B, C, D, E)
+            if (isset($parking_areas[$area_code])) {
+                $parking_areas[$area_code]['exists'] = true;
+                $parking_areas[$area_code]['area_id'] = $area_row['area_id'];
+            }
+        }
+    }
+
+    // Query 2: Get all existing parking spaces from database
+    $space_sql = "SELECT ps.space_number, pa.area_name 
+                  FROM ParkingSpace ps 
+                  JOIN ParkingArea pa ON ps.area_id = pa.area_id";
+    $space_result = $conn->query($space_sql);
+    if ($space_result) {
+        while ($space_row = $space_result->fetch_assoc()) {
+            // Extract slot number from space_number
+            // Format can be "A-01", "A-1", "1", "01", etc.
+            $space_num = $space_row['space_number'];
+            if (preg_match('/[A-E]-(\d+)/i', $space_num, $matches)) {
+                // Format: A-01, B-15, etc.
+                $available_spaces[] = (int) $matches[1];
+            } elseif (preg_match('/^(\d+)$/', $space_num, $matches)) {
+                // Format: just a number like "1", "15"
+                $available_spaces[] = (int) $matches[1];
+            }
+        }
+    }
+
+    // Query 3: Get approved vehicles for the current user
+    $sql = "SELECT vehicle_id, vehicle_type, vehicle_model, license_plate 
+            FROM Vehicle 
+            WHERE user_id = ? AND status = 'approved'";
+    $stmt = $conn->prepare($sql);
     $stmt->bind_param("i", $user_id);
     $stmt->execute();
     $result = $stmt->get_result();
@@ -139,21 +203,115 @@ $conn->close();
         }
 
         /* Main Layout */
-        .main-container {
+        .container {
             display: flex;
+            flex-direction: column;
+            padding: 20px;
             height: calc(100vh - 70px);
         }
 
-        /* Map Section */
-        .map-section {
-            flex: 1;
+        /* Page Header */
+        .page-header {
+            margin-bottom: 20px;
+            text-align: center;
+        }
+
+        .page-header h1 {
+            color: var(--text-dark);
+            margin-bottom: 5px;
+        }
+
+        .page-header p {
+            color: var(--text-light);
+        }
+
+        /* Area Color Legend */
+        .area-legend {
+            display: flex;
+            justify-content: center;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-top: 15px;
+        }
+
+        /* Individual legend item */
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 15px;
+            background: #f8f9fa;
+            border-radius: 25px;
+            font-size: 0.9rem;
+        }
+
+        /* Color box in legend */
+        .legend-color {
+            width: 20px;
+            height: 20px;
+            border-radius: 5px;
+        }
+
+        /* Parking Slot Interactive Styles */
+        .parking-slot {
+            cursor: pointer;
+            transition: all 0.3s ease;
+            pointer-events: all;
+        }
+
+        /* Hover effect for available slots */
+        .parking-slot:hover {
+            opacity: 0.8;
+            stroke: #2f855a;
+            stroke-width: 2px;
+        }
+
+        /* Selected slot styling */
+        .parking-slot.selected {
+            stroke: #2b6cb0;
+            stroke-width: 3px;
+            filter: drop-shadow(0 0 8px rgba(66, 153, 225, 0.7));
+        }
+
+        /* Taken/booked slot styling */
+        .parking-slot.taken {
+            fill: #f56565 !important;
+            cursor: not-allowed;
+            pointer-events: none;
+        }
+
+        /* Unavailable slot styling - areas/spaces not in database */
+        .parking-slot.unavailable {
+            fill: #1a1a1a !important;
+            cursor: not-allowed;
+            pointer-events: none;
+            opacity: 0.7;
+        }
+
+        /* Unavailable slot - no hover effect */
+        .parking-slot.unavailable:hover {
+            opacity: 0.7;
+            stroke: none;
+            stroke-width: 0;
+        }
+
+        /* Legend item for unavailable areas */
+        .unavailable-legend {
+            opacity: 0.7;
+        }
+
+        /* Container for the SVG parking map */
+        .svg-container {
+            width: 100%;
+            height: calc(100vh - 280px);
+            padding: 0;
             overflow: hidden;
             display: flex;
             justify-content: center;
             align-items: center;
         }
 
-        .map-section svg {
+        .svg-container svg {
             width: 100%;
             height: 100%;
         }
@@ -165,6 +323,11 @@ $conn->close();
             border-left: 1px solid #e2e8f0;
             padding: 20px;
             overflow-y: auto;
+            position: fixed;
+            right: 0;
+            top: 70px;
+            bottom: 0;
+            box-shadow: -2px 0 10px rgba(0, 0, 0, 0.05);
         }
 
         .booking-panel h2 {
@@ -369,7 +532,8 @@ $conn->close();
             <?php elseif (strtolower($user_type) === 'admin'): ?>
                 <a href="../../Moudel1/Admin.php?view=dashboard">Dashboard</a>
                 <a href="../membership/index.php">Vehicles</a>
-                <a href="../parking/index.php" class="active">Parking Areas</a>
+                <a href="../parking/index.php" class="active">Parking Map</a>
+                <a href="../../admin/parking_management.php">Manage Parking</a>
                 <a href="../booking/index.php">Bookings</a>
                 <a href="../../Moudel1/Admin.php?view=register">Register Student</a>
                 <a href="../../Moudel1/Admin.php?view=manage">Manage Profile</a>
@@ -389,165 +553,264 @@ $conn->close();
         </div>
     </nav>
 
-    <div class="main-container">
-        <div class="map-section">
+    <!-- Main Content Container -->
+    <div class="container" style="margin-right: 320px;">
+        <!-- Page Header with Area Legend -->
+        <div class="page-header">
+            <h1><?php echo $is_student ? 'Find Parking' : 'Parking Areas'; ?></h1>
+            <p>Select an available parking slot to make a reservation</p>
+
+            <!-- Area Color Legend -->
+            <div class="area-legend">
+                <?php foreach ($parking_areas as $code => $area): ?>
+                    <div class="legend-item <?php echo !$area['exists'] ? 'unavailable-legend' : ''; ?>">
+                        <div class="legend-color"
+                            style="background: <?php echo $area['exists'] ? $area['color'] : '#1a1a1a'; ?>;"></div>
+                        <span>
+                            <?php echo $area['name']; ?> (Slots <?php echo $area['start']; ?>-<?php echo $area['end']; ?>)
+                            <?php if (!$area['exists']): ?>
+                                <em style="color: #999; font-size: 0.8em;">(Not Available)</em>
+                            <?php endif; ?>
+                        </span>
+                    </div>
+                <?php endforeach; ?>
+                <div class="legend-item">
+                    <div class="legend-color" style="background: #f56565;"></div>
+                    <span>Booked</span>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-color" style="background: #1a1a1a;"></div>
+                    <span>Not in System</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- SVG Parking Map Container -->
+        <div class="svg-container">
             <?php include '../../assets/parking_slots_optimized.php'; ?>
         </div>
 
-        <div class="booking-panel">
-            <?php if ($is_student): ?>
-                <h2>📝 Book Parking</h2>
+    </div>
+
+    <div class="booking-panel">
+        <?php if ($is_student): ?>
+            <h2>📝 Book Parking</h2>
+        <?php else: ?>
+            <h2>🅿️ Slot Details</h2>
+        <?php endif; ?>
+
+        <div class="form-group">
+            <label>Date</label>
+            <input type="date" id="bookingDate" min="<?= date('Y-m-d') ?>">
+        </div>
+
+        <div class="form-group">
+            <label>Start Time</label>
+            <div class="time-row">
+                <select id="startHour">
+                    <?php for ($h = 7; $h <= 11; $h++): ?>
+                        <option value="<?= $h ?>"><?= $h ?></option>
+                    <?php endfor; ?>
+                    <option value="12">12</option>
+                    <?php for ($h = 1; $h <= 6; $h++): ?>
+                        <option value="<?= $h ?>"><?= $h ?></option>
+                    <?php endfor; ?>
+                </select>
+                <select id="startAmPm">
+                    <option value="AM">AM</option>
+                    <option value="PM">PM</option>
+                </select>
+            </div>
+        </div>
+
+        <div class="form-group">
+            <label>End Time</label>
+            <div class="time-row">
+                <select id="endHour">
+                    <?php for ($h = 7; $h <= 11; $h++): ?>
+                        <option value="<?= $h ?>" <?= $h == 10 ? 'selected' : '' ?>><?= $h ?></option>
+                    <?php endfor; ?>
+                    <option value="12">12</option>
+                    <?php for ($h = 1; $h <= 6; $h++): ?>
+                        <option value="<?= $h ?>"><?= $h ?></option>
+                    <?php endfor; ?>
+                </select>
+                <select id="endAmPm">
+                    <option value="AM">AM</option>
+                    <option value="PM">PM</option>
+                </select>
+            </div>
+        </div>
+
+        <button class="btn btn-secondary" onclick="loadSlots()">
+            🔍 Check Availability
+        </button>
+
+        <hr style="margin: 15px 0; border: none; border-top: 1px solid #eee;">
+
+        <?php if ($is_student): ?>
+            <?php if (empty($vehicles)): ?>
+                <div class="no-vehicle-msg">
+                    <p>No approved vehicle.</p>
+                    <a href="../membership/index.php">Register one</a>
+                </div>
             <?php else: ?>
-                <h2>🅿️ Slot Details</h2>
-            <?php endif; ?>
-
-            <div class="legend">
-                <div class="legend-item">
-                    <div class="legend-box" style="background:#a0a0a0;"></div> Available
-                </div>
-                <div class="legend-item">
-                    <div class="legend-box" style="background:#f56565;"></div> Booked
-                </div>
-                <div class="legend-item">
-                    <div class="legend-box" style="background:#4299e1;"></div> Selected
-                </div>
-            </div>
-
-            <div class="form-group">
-                <label>Date</label>
-                <input type="date" id="bookingDate" min="<?= date('Y-m-d') ?>">
-            </div>
-
-            <div class="form-group">
-                <label>Start Time</label>
-                <div class="time-row">
-                    <select id="startHour">
-                        <?php for ($h = 7; $h <= 11; $h++): ?>
-                            <option value="<?= $h ?>"><?= $h ?></option>
-                        <?php endfor; ?>
-                        <option value="12">12</option>
-                        <?php for ($h = 1; $h <= 6; $h++): ?>
-                            <option value="<?= $h ?>"><?= $h ?></option>
-                        <?php endfor; ?>
-                    </select>
-                    <select id="startAmPm">
-                        <option value="AM">AM</option>
-                        <option value="PM">PM</option>
-                    </select>
-                </div>
-            </div>
-
-            <div class="form-group">
-                <label>End Time</label>
-                <div class="time-row">
-                    <select id="endHour">
-                        <?php for ($h = 7; $h <= 11; $h++): ?>
-                            <option value="<?= $h ?>" <?= $h == 10 ? 'selected' : '' ?>><?= $h ?></option>
-                        <?php endfor; ?>
-                        <option value="12">12</option>
-                        <?php for ($h = 1; $h <= 6; $h++): ?>
-                            <option value="<?= $h ?>"><?= $h ?></option>
-                        <?php endfor; ?>
-                    </select>
-                    <select id="endAmPm">
-                        <option value="AM">AM</option>
-                        <option value="PM">PM</option>
-                    </select>
-                </div>
-            </div>
-
-            <button class="btn btn-secondary" onclick="loadSlots()">
-                🔍 Check Availability
-            </button>
-
-            <hr style="margin: 15px 0; border: none; border-top: 1px solid #eee;">
-
-            <?php if ($is_student): ?>
-                <?php if (empty($vehicles)): ?>
-                    <div class="no-vehicle-msg">
-                        <p>No approved vehicle.</p>
-                        <a href="../membership/index.php">Register one</a>
-                    </div>
-                <?php else: ?>
-                    <div id="placeholder" class="placeholder-text">
-                        <span>👆</span>
-                        Select date/time, then click a slot
-                    </div>
-
-                    <div id="bookingForm" style="display:none;">
-                        <div class="slot-display">
-                            <div class="slot-label">Selected Slot</div>
-                            <div class="slot-id" id="slotDisplay">-</div>
-                        </div>
-
-                        <div class="form-group">
-                            <label>Vehicle</label>
-                            <select id="vehicleSelect">
-                                <option value="">-- Select --</option>
-                                <?php foreach ($vehicles as $v): ?>
-                                    <option value="<?= $v['vehicle_id'] ?>">
-                                        <?= htmlspecialchars($v['license_plate']) ?>
-                                    </option>
-                                <?php endforeach; ?>
-                            </select>
-                        </div>
-
-                        <div class="qr-section" id="qrSection" style="display:none;">
-                            <img id="qrImage" src="" alt="QR" width="90">
-                            <p>Scan when parking</p>
-                        </div>
-
-                        <div id="messageBox"></div>
-
-                        <button class="btn btn-primary" id="confirmBtn" onclick="confirmBooking()">
-                            ✓ Confirm Booking
-                        </button>
-                        <button class="btn btn-secondary" onclick="clearSelection()">
-                            ✕ Cancel
-                        </button>
-                    </div>
-                <?php endif; ?>
-            <?php else: ?>
-                <!-- Admin/Staff View -->
                 <div id="placeholder" class="placeholder-text">
                     <span>👆</span>
-                    Click a slot to view details
+                    Select date/time, then click a slot
                 </div>
 
-                <div id="slotDetails" style="display:none;">
+                <div id="bookingForm" style="display:none;">
                     <div class="slot-display">
-                        <div class="slot-label">Slot Number</div>
+                        <div class="slot-label">Selected Slot</div>
                         <div class="slot-id" id="slotDisplay">-</div>
                     </div>
 
-                    <div id="bookingInfo">
-                        <p style="color:#888;text-align:center;">No booking for selected time</p>
+                    <div class="form-group">
+                        <label>Vehicle</label>
+                        <select id="vehicleSelect">
+                            <option value="">-- Select --</option>
+                            <?php foreach ($vehicles as $v): ?>
+                                <option value="<?= $v['vehicle_id'] ?>">
+                                    <?= htmlspecialchars($v['license_plate']) ?>
+                                </option>
+                            <?php endforeach; ?>
+                        </select>
                     </div>
 
-                    <div class="qr-section" id="qrSection">
-                        <img id="qrImage" src="" alt="QR" width="120">
-                        <p>Slot QR Code</p>
+                    <div class="qr-section" id="qrSection" style="display:none;">
+                        <img id="qrImage" src="" alt="QR" width="90">
+                        <p>Scan when parking</p>
                     </div>
 
-                    <button class="btn btn-primary" onclick="printQR()">
-                        🖨️ Print QR Code
+                    <div id="messageBox"></div>
+
+                    <button class="btn btn-primary" id="confirmBtn" type="button" onclick="confirmBooking()">
+                        ✓ Confirm Booking
+                    </button>
+                    <button class="btn btn-secondary" type="button" onclick="clearSelection()">
+                        ✕ Cancel
                     </button>
                 </div>
             <?php endif; ?>
-        </div>
+        <?php else: ?>
+            <!-- Admin/Staff View -->
+            <div id="placeholder" class="placeholder-text">
+                <span>👆</span>
+                Click a slot to view details
+            </div>
+
+            <div id="slotDetails" style="display:none;">
+                <div class="slot-display">
+                    <div class="slot-label">Slot Number</div>
+                    <div class="slot-id" id="slotDisplay">-</div>
+                </div>
+
+                <div id="bookingInfo">
+                    <p style="color:#888;text-align:center;">No booking for selected time</p>
+                </div>
+
+                <div class="qr-section" id="qrSection">
+                    <img id="qrImage" src="" alt="QR" width="120">
+                    <p>Slot QR Code</p>
+                </div>
+
+                <button class="btn btn-primary" onclick="printQR()">
+                    🖨️ Print QR Code
+                </button>
+            </div>
+        <?php endif; ?>
     </div>
 
     <script>
+        // Wait for the page to load completely
+        document.addEventListener('DOMContentLoaded', function () {
+
+            // Define parking areas with their slot ranges, colors, and existence status from database
+            const parkingAreas = <?php echo json_encode(array_map(function ($area) {
+                return [
+                    'start' => $area['start'],
+                    'end' => $area['end'],
+                    'color' => $area['color'],
+                    'name' => $area['name'],
+                    'exists' => $area['exists']
+                ];
+            }, $parking_areas)); ?>;
+
+            // Array of available space numbers from database (spaces that exist)
+            const availableSpaces = <?php echo json_encode($available_spaces); ?>;
+
+            // Function to determine which area a slot belongs to
+            function getAreaForSlot(slotNum) {
+                for (const [code, area] of Object.entries(parkingAreas)) {
+                    if (slotNum >= area.start && slotNum <= area.end) {
+                        return { code: code, ...area };
+                    }
+                }
+                return { code: 'A', ...parkingAreas['A'], exists: false };
+            }
+
+            // Function to check if a slot is available in the database
+            function isSlotAvailable(slotNum) {
+                // Check if the space exists in the database
+                return availableSpaces.includes(slotNum);
+            }
+
+            // Get all parking slot elements from the SVG
+            // Use global selector to avoid conflicts
+            const slots = document.querySelectorAll('.parking-slot');
+            let selectedSlot = null;
+
+            // Loop through each slot and set up styling and click handlers
+            slots.forEach(slot => {
+                // Get the slot number from the element ID (e.g., "slot-1" -> 1)
+                const slotId = slot.id;
+                const slotNum = parseInt(slotId.replace('slot-', ''));
+
+                // Get the area information for this slot
+                const areaInfo = getAreaForSlot(slotNum);
+
+                // First check: Is the area available in database?
+                // If area doesn't exist in database, show as black (unavailable)
+                if (!areaInfo.exists) {
+                    slot.classList.add('unavailable');
+                    slot.setAttribute('fill', '#1a1a1a'); // Black for unavailable area
+                    slot.style.cursor = 'not-allowed';
+                    slot.style.pointerEvents = 'none';
+                    return; // Skip further processing
+                }
+
+                // Second check: Is the specific slot available in database?
+                // If slot doesn't exist in database, show as dark gray
+                if (!isSlotAvailable(slotNum)) {
+                    slot.classList.add('unavailable');
+                    slot.setAttribute('fill', '#333333'); // Dark gray for unavailable slot
+                    slot.style.cursor = 'not-allowed';
+                    slot.style.pointerEvents = 'none';
+                    return; // Skip further processing
+                }
+
+                // Set the slot color based on its area (slot is available)
+                slot.setAttribute('fill', areaInfo.color);
+
+                // Add click event listener for available slots
+                slot.addEventListener('click', function () {
+                    // Don't allow clicking on taken or unavailable slots
+                    // Use selectSlot function which handles logic
+                    selectSlot(this);
+                });
+            });
+
+            // Set default date to today
+            document.getElementById('bookingDate').value = new Date().toISOString().split('T')[0];
+
+            // Load slots availability
+            loadSlots();
+        });
+
         let selectedSlot = null;
         const slots = document.querySelectorAll('.parking-slot');
         const isStudent = <?= $is_student ? 'true' : 'false' ?>;
-
-        document.getElementById('bookingDate').value =
-            new Date().toISOString().split('T')[0];
-
-        slots.forEach(slot => {
-            slot.addEventListener('click', () => selectSlot(slot));
-        });
 
         function getTime(hourId, ampmId) {
             let h = parseInt(document.getElementById(hourId).value);
@@ -565,6 +828,9 @@ $conn->close();
             if (!date) { alert('Select a date'); return; }
 
             slots.forEach(s => s.classList.remove('booked', 'selected'));
+            // Note: Colors are reset by reload or by class removal, but 'fill' attribute remains. 
+            // .booked class will override fill via CSS !important.
+
             clearSelection();
 
             fetch(`../booking/api/get_slots.php?date=${date}&start=${start}&end=${end}`)
@@ -572,7 +838,11 @@ $conn->close();
                 .then(data => {
                     (data.booked || []).forEach(id => {
                         const el = document.getElementById('slot-' + id);
-                        if (el) el.classList.add('booked');
+                        if (el) {
+                            el.classList.add('booked');
+                            // Force fill color for booked slots
+                            el.setAttribute('fill', '#f56565');
+                        }
                     });
                 });
         }
@@ -580,6 +850,7 @@ $conn->close();
         function selectSlot(el) {
             // Students can't select booked slots, admin/staff can
             if (isStudent && el.classList.contains('booked')) return;
+            if (el.classList.contains('unavailable')) return;
 
             slots.forEach(s => s.classList.remove('selected'));
             el.classList.add('selected');
@@ -726,8 +997,6 @@ $conn->close();
             `);
             printWindow.document.close();
         }
-
-        loadSlots();
     </script>
 </body>
 

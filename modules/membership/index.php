@@ -42,6 +42,7 @@ $username = $_SESSION['username'] ?? 'Admin';
         .navbar .brand {
             font-size: 1.6rem;
             font-weight: 800;
+            letter-spacing: 0.5px;
         }
 
         .nav-links {
@@ -55,16 +56,21 @@ $username = $_SESSION['username'] ?? 'Admin';
             padding: 10px 18px;
             border-radius: 50px;
             font-weight: 500;
+            transition: all 0.3s ease;
+            font-size: 0.95rem;
         }
 
         .nav-links a:hover {
             background: rgba(255, 255, 255, 0.15);
+            color: white;
+            transform: translateY(-2px);
         }
 
         .nav-links a.active {
             background: #fff;
             color: #6a67ce;
             font-weight: 700;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
         }
 
         .user-profile {
@@ -123,7 +129,8 @@ $username = $_SESSION['username'] ?? 'Admin';
         <div class="nav-links">
             <a href="../../Moudel1/Admin.php?view=dashboard">Dashboard</a>
             <a href="index.php" class="active">Vehicles</a>
-            <a href="../parking/index.php">Parking Areas</a>
+            <a href="../parking/index.php">Parking Map</a>
+            <a href="../../admin/parking_management.php">Manage Parking</a>
             <a href="../booking/index.php">Bookings</a>
             <a href="../../Moudel1/Admin.php?view=register">Register Student</a>
             <a href="../../Moudel1/Admin.php?view=manage">Manage Profile</a>

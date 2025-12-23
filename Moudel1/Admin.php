@@ -113,7 +113,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['update_user'])) {
     $edit_email = trim($_POST['edit_email']);
     $edit_phone = trim($_POST['edit_phone']);
     $edit_type = $_POST['edit_usertype'];
-    
+
     if (!empty($edit_username) && !empty($edit_email)) {
         $stmt = $conn->prepare("UPDATE User SET UserName = ?, Email = ?, PhoneNumber = ?, UserType = ? WHERE user_id = ?");
         $stmt->bind_param("ssssi", $edit_username, $edit_email, $edit_phone, $edit_type, $edit_id);
@@ -148,12 +148,17 @@ closeDBConnection($conn);
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title><?php 
-        if ($current_view === 'dashboard') echo 'Admin Dashboard';
-        elseif ($current_view === 'profile') echo 'My Profile';
-        elseif ($current_view === 'register') echo 'Register Student';
-        elseif ($current_view === 'manage') echo 'Manage Profile';
-        else echo 'Admin Dashboard';
+    <title><?php
+    if ($current_view === 'dashboard')
+        echo 'Admin Dashboard';
+    elseif ($current_view === 'profile')
+        echo 'My Profile';
+    elseif ($current_view === 'register')
+        echo 'Register Student';
+    elseif ($current_view === 'manage')
+        echo 'Manage Profile';
+    else
+        echo 'Admin Dashboard';
     ?> - Mawgifi</title>
     <link rel="stylesheet" href="Admin.css">
 </head>
@@ -165,10 +170,13 @@ closeDBConnection($conn);
         <div class="nav-links">
             <a href="Admin.php?view=dashboard" <?php echo $current_view === 'dashboard' ? 'class="active"' : ''; ?>>Dashboard</a>
             <a href="../modules/membership/index.php">Vehicles</a>
-            <a href="../modules/parking/index.php">Parking Areas</a>
+            <a href="../modules/parking/index.php">Parking Map</a>
+            <a href="../admin/parking_management.php">Manage Parking</a>
             <a href="../modules/booking/index.php">Bookings</a>
-            <a href="Admin.php?view=register" <?php echo $current_view === 'register' ? 'class="active"' : ''; ?>>Register Student</a>
-            <a href="Admin.php?view=manage" <?php echo $current_view === 'manage' ? 'class="active"' : ''; ?>>Manage Profile</a>
+            <a href="Admin.php?view=register" <?php echo $current_view === 'register' ? 'class="active"' : ''; ?>>Register
+                Student</a>
+            <a href="Admin.php?view=manage" <?php echo $current_view === 'manage' ? 'class="active"' : ''; ?>>Manage
+                Profile</a>
             <a href="Admin.php?view=profile" <?php echo $current_view === 'profile' ? 'class="active"' : ''; ?>>Profile</a>
         </div>
 
@@ -181,263 +189,278 @@ closeDBConnection($conn);
 
     <div class="container">
         <?php if ($current_view === 'dashboard'): ?>
-        <!-- Dashboard View -->
-        <div class="dashboard-welcome">
-            <h2>Welcome Back, <?php echo htmlspecialchars($username); ?>!</h2>
-            <p>Manage the Mawgifi parking system</p>
-        </div>
-
-        <div class="modules-grid">
-            <a href="../modules/membership/index.php" class="module-card m1">
-                <div class="module-icon">🚗</div>
-                <h3>Vehicles</h3>
-                <p>Manage user memberships, profiles, and vehicle registrations.</p>
-            </a>
-
-            <a href="../modules/parking/index.php" class="module-card m2">
-                <div class="module-icon">🅿️</div>
-                <h3>Parking Areas</h3>
-                <p>Manage parking areas, spaces, and monitor availability status.</p>
-            </a>
-
-            <a href="../modules/booking/index.php" class="module-card m3">
-                <div class="module-icon">📋</div>
-                <h3>Bookings</h3>
-                <p>Oversee parking bookings and manage QR code access systems.</p>
-            </a>
-        </div>
-
-        <!-- Quick Stats -->
-        <div class="stats-section">
-            <div class="stat-card">
-                <div class="stat-number"><?php echo $total_students; ?></div>
-                <div class="stat-label">Total Students</div>
+            <!-- Dashboard View -->
+            <div class="dashboard-welcome">
+                <h2>Welcome Back, <?php echo htmlspecialchars($username); ?>!</h2>
+                <p>Manage the Mawgifi parking system</p>
             </div>
-            <div class="stat-card">
-                <div class="stat-number"><?php echo $total_staff; ?></div>
-                <div class="stat-label">Total Staff</div>
+
+            <div class="modules-grid">
+                <a href="../modules/membership/index.php" class="module-card m1">
+                    <div class="module-icon">🚗</div>
+                    <h3>Vehicles</h3>
+                    <p>Manage user memberships, profiles, and vehicle registrations.</p>
+                </a>
+
+                <a href="../modules/parking/index.php" class="module-card m2">
+                    <div class="module-icon">🅿️</div>
+                    <h3>Parking Areas</h3>
+                    <p>Manage parking areas, spaces, and monitor availability status.</p>
+                </a>
+
+                <a href="../modules/booking/index.php" class="module-card m3">
+                    <div class="module-icon">📋</div>
+                    <h3>Bookings</h3>
+                    <p>Oversee parking bookings and manage QR code access systems.</p>
+                </a>
             </div>
-            <div class="stat-card">
-                <div class="stat-number"><?php echo $total_vehicles; ?></div>
-                <div class="stat-label">Total Vehicles</div>
+
+            <!-- Quick Stats -->
+            <div class="stats-section">
+                <div class="stat-card">
+                    <div class="stat-number"><?php echo $total_students; ?></div>
+                    <div class="stat-label">Total Students</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number"><?php echo $total_staff; ?></div>
+                    <div class="stat-label">Total Staff</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number"><?php echo $total_vehicles; ?></div>
+                    <div class="stat-label">Total Vehicles</div>
+                </div>
             </div>
-        </div>
 
         <?php elseif ($current_view === 'register'): ?>
-        <!-- Register Student View -->
-        <div class="module-header">
-            <h1>Register Student</h1>
-            <p>Register a new student to the system</p>
-        </div>
-
-        <div class="content-area">
-            <?php if ($error_message): ?>
-                <div class="alert alert-error"><?php echo htmlspecialchars($error_message); ?></div>
-            <?php endif; ?>
-
-            <?php if ($success_message): ?>
-                <div class="alert alert-success"><?php echo htmlspecialchars($success_message); ?></div>
-            <?php endif; ?>
-
-            <div class="form-section">
-                <h2>New Student Information</h2>
-                <form method="POST" action="">
-                    <div class="form-row">
-                        <div class="form-group">
-                            <label for="new_username">Username</label>
-                            <input type="text" id="new_username" name="new_username" placeholder="Enter username" required>
-                        </div>
-
-                        <div class="form-group">
-                            <label for="new_email">Email Address</label>
-                            <input type="email" id="new_email" name="new_email" placeholder="Enter email" required>
-                        </div>
-                    </div>
-
-                    <div class="form-row">
-                        <div class="form-group">
-                            <label for="new_phone">Phone Number</label>
-                            <input type="text" id="new_phone" name="new_phone" placeholder="Enter phone number">
-                        </div>
-                    </div>
-
-                    <div class="form-row">
-                        <div class="form-group">
-                            <label for="new_password">Password</label>
-                            <input type="password" id="new_password" name="new_password" placeholder="Enter password" required>
-                        </div>
-
-                        <div class="form-group">
-                            <label for="confirm_new_password">Confirm Password</label>
-                            <input type="password" id="confirm_new_password" name="confirm_new_password" placeholder="Confirm password" required>
-                        </div>
-                    </div>
-
-                    <button type="submit" name="register_student" class="btn">Register Student</button>
-                </form>
+            <!-- Register Student View -->
+            <div class="module-header">
+                <h1>Register Student</h1>
+                <p>Register a new student to the system</p>
             </div>
-        </div>
+
+            <div class="content-area">
+                <?php if ($error_message): ?>
+                    <div class="alert alert-error"><?php echo htmlspecialchars($error_message); ?></div>
+                <?php endif; ?>
+
+                <?php if ($success_message): ?>
+                    <div class="alert alert-success"><?php echo htmlspecialchars($success_message); ?></div>
+                <?php endif; ?>
+
+                <div class="form-section">
+                    <h2>New Student Information</h2>
+                    <form method="POST" action="">
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="new_username">Username</label>
+                                <input type="text" id="new_username" name="new_username" placeholder="Enter username"
+                                    required>
+                            </div>
+
+                            <div class="form-group">
+                                <label for="new_email">Email Address</label>
+                                <input type="email" id="new_email" name="new_email" placeholder="Enter email" required>
+                            </div>
+                        </div>
+
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="new_phone">Phone Number</label>
+                                <input type="text" id="new_phone" name="new_phone" placeholder="Enter phone number">
+                            </div>
+                        </div>
+
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="new_password">Password</label>
+                                <input type="password" id="new_password" name="new_password" placeholder="Enter password"
+                                    required>
+                            </div>
+
+                            <div class="form-group">
+                                <label for="confirm_new_password">Confirm Password</label>
+                                <input type="password" id="confirm_new_password" name="confirm_new_password"
+                                    placeholder="Confirm password" required>
+                            </div>
+                        </div>
+
+                        <button type="submit" name="register_student" class="btn">Register Student</button>
+                    </form>
+                </div>
+            </div>
 
         <?php elseif ($current_view === 'manage'): ?>
-        <!-- Manage Profile View -->
-        <div class="module-header">
-            <h1>Manage Profile</h1>
-            <p>Manage all student and staff profiles</p>
-        </div>
+            <!-- Manage Profile View -->
+            <div class="module-header">
+                <h1>Manage Profile</h1>
+                <p>Manage all student and staff profiles</p>
+            </div>
 
-        <div class="content-area">
-            <?php if ($error_message): ?>
-                <div class="alert alert-error"><?php echo htmlspecialchars($error_message); ?></div>
-            <?php endif; ?>
+            <div class="content-area">
+                <?php if ($error_message): ?>
+                    <div class="alert alert-error"><?php echo htmlspecialchars($error_message); ?></div>
+                <?php endif; ?>
 
-            <?php if ($success_message): ?>
-                <div class="alert alert-success"><?php echo htmlspecialchars($success_message); ?></div>
-            <?php endif; ?>
+                <?php if ($success_message): ?>
+                    <div class="alert alert-success"><?php echo htmlspecialchars($success_message); ?></div>
+                <?php endif; ?>
 
-            <div class="table-container">
-                <table class="data-table">
-                    <thead>
-                        <tr>
-                            <th>Username</th>
-                            <th>Email</th>
-                            <th>Phone</th>
-                            <th>Type</th>
-                            <th>Actions</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <?php if (empty($all_users)): ?>
-                            <tr><td colspan="5" style="text-align: center;">No users found</td></tr>
-                        <?php else: ?>
-                            <?php foreach ($all_users as $user): ?>
+                <div class="table-container">
+                    <table class="data-table">
+                        <thead>
                             <tr>
-                                <td><?php echo htmlspecialchars($user['UserName']); ?></td>
-                                <td><?php echo htmlspecialchars($user['Email']); ?></td>
-                                <td><?php echo htmlspecialchars($user['PhoneNumber'] ?? '-'); ?></td>
-                                <td><span class="badge <?php echo $user['UserType'] === 'staff' ? 'badge-staff' : 'badge-student'; ?>"><?php echo ucfirst($user['UserType'] === 'user' ? 'Student' : $user['UserType']); ?></span></td>
-                                <td>
-                                    <button class="btn btn-sm btn-edit" onclick="openEditModal(<?php echo $user['user_id']; ?>, '<?php echo htmlspecialchars($user['UserName']); ?>', '<?php echo htmlspecialchars($user['Email']); ?>', '<?php echo htmlspecialchars($user['PhoneNumber'] ?? ''); ?>', '<?php echo $user['UserType']; ?>')">Edit</button>
-                                    <form method="POST" style="display:inline;" onsubmit="return confirm('Are you sure you want to delete this user?');">
-                                        <input type="hidden" name="delete_user_id" value="<?php echo $user['user_id']; ?>">
-                                        <button type="submit" name="delete_user" class="btn btn-sm btn-delete">Delete</button>
-                                    </form>
-                                </td>
+                                <th>Username</th>
+                                <th>Email</th>
+                                <th>Phone</th>
+                                <th>Type</th>
+                                <th>Actions</th>
                             </tr>
-                            <?php endforeach; ?>
-                        <?php endif; ?>
-                    </tbody>
-                </table>
+                        </thead>
+                        <tbody>
+                            <?php if (empty($all_users)): ?>
+                                <tr>
+                                    <td colspan="5" style="text-align: center;">No users found</td>
+                                </tr>
+                            <?php else: ?>
+                                <?php foreach ($all_users as $user): ?>
+                                    <tr>
+                                        <td><?php echo htmlspecialchars($user['UserName']); ?></td>
+                                        <td><?php echo htmlspecialchars($user['Email']); ?></td>
+                                        <td><?php echo htmlspecialchars($user['PhoneNumber'] ?? '-'); ?></td>
+                                        <td><span
+                                                class="badge <?php echo $user['UserType'] === 'staff' ? 'badge-staff' : 'badge-student'; ?>"><?php echo ucfirst($user['UserType'] === 'user' ? 'Student' : $user['UserType']); ?></span>
+                                        </td>
+                                        <td>
+                                            <button class="btn btn-sm btn-edit"
+                                                onclick="openEditModal(<?php echo $user['user_id']; ?>, '<?php echo htmlspecialchars($user['UserName']); ?>', '<?php echo htmlspecialchars($user['Email']); ?>', '<?php echo htmlspecialchars($user['PhoneNumber'] ?? ''); ?>', '<?php echo $user['UserType']; ?>')">Edit</button>
+                                            <form method="POST" style="display:inline;"
+                                                onsubmit="return confirm('Are you sure you want to delete this user?');">
+                                                <input type="hidden" name="delete_user_id" value="<?php echo $user['user_id']; ?>">
+                                                <button type="submit" name="delete_user"
+                                                    class="btn btn-sm btn-delete">Delete</button>
+                                            </form>
+                                        </td>
+                                    </tr>
+                                <?php endforeach; ?>
+                            <?php endif; ?>
+                        </tbody>
+                    </table>
+                </div>
             </div>
-        </div>
 
-        <!-- Edit Modal -->
-        <div id="editModal" class="modal">
-            <div class="modal-content">
-                <span class="close-modal" onclick="closeEditModal()">&times;</span>
-                <h2>Edit User</h2>
-                <form method="POST" action="">
-                    <input type="hidden" id="edit_user_id" name="edit_user_id">
-                    <div class="form-group">
-                        <label for="edit_username">Username</label>
-                        <input type="text" id="edit_username" name="edit_username" required>
-                    </div>
-                    <div class="form-group">
-                        <label for="edit_email">Email</label>
-                        <input type="email" id="edit_email" name="edit_email" required>
-                    </div>
-                    <div class="form-group">
-                        <label for="edit_phone">Phone</label>
-                        <input type="text" id="edit_phone" name="edit_phone">
-                    </div>
-                    <div class="form-group">
-                        <label for="edit_usertype">User Type</label>
-                        <select id="edit_usertype" name="edit_usertype">
-                            <option value="user">Student</option>
-                            <option value="staff">Staff</option>
-                        </select>
-                    </div>
-                    <button type="submit" name="update_user" class="btn">Update User</button>
-                </form>
+            <!-- Edit Modal -->
+            <div id="editModal" class="modal">
+                <div class="modal-content">
+                    <span class="close-modal" onclick="closeEditModal()">&times;</span>
+                    <h2>Edit User</h2>
+                    <form method="POST" action="">
+                        <input type="hidden" id="edit_user_id" name="edit_user_id">
+                        <div class="form-group">
+                            <label for="edit_username">Username</label>
+                            <input type="text" id="edit_username" name="edit_username" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="edit_email">Email</label>
+                            <input type="email" id="edit_email" name="edit_email" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="edit_phone">Phone</label>
+                            <input type="text" id="edit_phone" name="edit_phone">
+                        </div>
+                        <div class="form-group">
+                            <label for="edit_usertype">User Type</label>
+                            <select id="edit_usertype" name="edit_usertype">
+                                <option value="user">Student</option>
+                                <option value="staff">Staff</option>
+                            </select>
+                        </div>
+                        <button type="submit" name="update_user" class="btn">Update User</button>
+                    </form>
+                </div>
             </div>
-        </div>
 
-        <script>
-            function openEditModal(id, username, email, phone, usertype) {
-                document.getElementById('edit_user_id').value = id;
-                document.getElementById('edit_username').value = username;
-                document.getElementById('edit_email').value = email;
-                document.getElementById('edit_phone').value = phone;
-                document.getElementById('edit_usertype').value = usertype;
-                document.getElementById('editModal').style.display = 'flex';
-            }
-            function closeEditModal() {
-                document.getElementById('editModal').style.display = 'none';
-            }
-            window.onclick = function(event) {
-                var modal = document.getElementById('editModal');
-                if (event.target == modal) {
-                    modal.style.display = 'none';
+            <script>
+                function openEditModal(id, username, email, phone, usertype) {
+                    document.getElementById('edit_user_id').value = id;
+                    document.getElementById('edit_username').value = username;
+                    document.getElementById('edit_email').value = email;
+                    document.getElementById('edit_phone').value = phone;
+                    document.getElementById('edit_usertype').value = usertype;
+                    document.getElementById('editModal').style.display = 'flex';
                 }
-            }
-        </script>
+                function closeEditModal() {
+                    document.getElementById('editModal').style.display = 'none';
+                }
+                window.onclick = function (event) {
+                    var modal = document.getElementById('editModal');
+                    if (event.target == modal) {
+                        modal.style.display = 'none';
+                    }
+                }
+            </script>
 
         <?php elseif ($current_view === 'profile'): ?>
-        <!-- Profile View -->
-        <div class="module-header">
-            <h1>👤 My Profile</h1>
-            <p>Update your personal information</p>
-        </div>
-
-        <div class="content-area">
-            <?php if ($error_message): ?>
-                <div class="alert alert-error"><?php echo htmlspecialchars($error_message); ?></div>
-            <?php endif; ?>
-
-            <?php if ($success_message): ?>
-                <div class="alert alert-success"><?php echo htmlspecialchars($success_message); ?></div>
-            <?php endif; ?>
-
-            <div class="form-section">
-                <h2>Personal Information</h2>
-                <form method="POST" action="">
-                    <div class="form-row">
-                        <div class="form-group">
-                            <label for="username">Username</label>
-                            <input type="text" id="username" name="username" value="<?php echo htmlspecialchars($user_data['UserName'] ?? ''); ?>" required>
-                        </div>
-
-                        <div class="form-group">
-                            <label for="email">Email Address</label>
-                            <input type="email" id="email" name="email" value="<?php echo htmlspecialchars($user_data['Email'] ?? ''); ?>" required>
-                        </div>
-                    </div>
-
-                    <div class="form-row">
-                        <div class="form-group">
-                            <label for="phone">Phone Number</label>
-                            <input type="text" id="phone" name="phone" value="<?php echo htmlspecialchars($user_data['PhoneNumber'] ?? ''); ?>" placeholder="Enter phone number">
-                        </div>
-                    </div>
-
-                    <h2 style="margin-top: 30px;">Change Password</h2>
-                    <p style="color: var(--text-light); margin-bottom: 20px;">Leave blank to keep current password</p>
-
-                    <div class="form-row">
-                        <div class="form-group">
-                            <label for="password">New Password</label>
-                            <input type="password" id="password" name="password" placeholder="Enter new password">
-                        </div>
-
-                        <div class="form-group">
-                            <label for="confirm_password">Confirm Password</label>
-                            <input type="password" id="confirm_password" name="confirm_password" placeholder="Confirm new password">
-                        </div>
-                    </div>
-
-                    <button type="submit" name="update_profile" class="btn">Update Profile</button>
-                </form>
+            <!-- Profile View -->
+            <div class="module-header">
+                <h1>👤 My Profile</h1>
+                <p>Update your personal information</p>
             </div>
-        </div>
+
+            <div class="content-area">
+                <?php if ($error_message): ?>
+                    <div class="alert alert-error"><?php echo htmlspecialchars($error_message); ?></div>
+                <?php endif; ?>
+
+                <?php if ($success_message): ?>
+                    <div class="alert alert-success"><?php echo htmlspecialchars($success_message); ?></div>
+                <?php endif; ?>
+
+                <div class="form-section">
+                    <h2>Personal Information</h2>
+                    <form method="POST" action="">
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="username">Username</label>
+                                <input type="text" id="username" name="username"
+                                    value="<?php echo htmlspecialchars($user_data['UserName'] ?? ''); ?>" required>
+                            </div>
+
+                            <div class="form-group">
+                                <label for="email">Email Address</label>
+                                <input type="email" id="email" name="email"
+                                    value="<?php echo htmlspecialchars($user_data['Email'] ?? ''); ?>" required>
+                            </div>
+                        </div>
+
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="phone">Phone Number</label>
+                                <input type="text" id="phone" name="phone"
+                                    value="<?php echo htmlspecialchars($user_data['PhoneNumber'] ?? ''); ?>"
+                                    placeholder="Enter phone number">
+                            </div>
+                        </div>
+
+                        <h2 style="margin-top: 30px;">Change Password</h2>
+                        <p style="color: var(--text-light); margin-bottom: 20px;">Leave blank to keep current password</p>
+
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="password">New Password</label>
+                                <input type="password" id="password" name="password" placeholder="Enter new password">
+                            </div>
+
+                            <div class="form-group">
+                                <label for="confirm_password">Confirm Password</label>
+                                <input type="password" id="confirm_password" name="confirm_password"
+                                    placeholder="Confirm new password">
+                            </div>
+                        </div>
+
+                        <button type="submit" name="update_profile" class="btn">Update Profile</button>
+                    </form>
+                </div>
+            </div>
         <?php endif; ?>
     </div>
 </body>

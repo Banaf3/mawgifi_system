@@ -31,11 +31,13 @@ body {
     display: flex;
     justify-content: space-between;
     align-items: center;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
 }
 
 .navbar .brand {
     font-size: 1.6rem;
     font-weight: 800;
+    letter-spacing: 0.5px;
 }
 
 .nav-links {
@@ -49,16 +51,21 @@ body {
     padding: 10px 18px;
     border-radius: 50px;
     font-weight: 500;
+    transition: all 0.3s ease;
+    font-size: 0.95rem;
 }
 
 .nav-links a:hover {
     background: rgba(255, 255, 255, 0.15);
+    color: white;
+    transform: translateY(-2px);
 }
 
 .nav-links a.active {
     background: #fff;
     color: #6a67ce;
     font-weight: 700;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
 }
 
 .user-profile {
