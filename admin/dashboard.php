@@ -198,10 +198,12 @@ $username = $_SESSION['username'] ?? 'Administrator';
         <div class="brand">Mawgifi</div>
 
         <div class="nav-links">
-            <a href="#" class="active">Dashboard</a>
+            <a href="../Moudel1/Admin.php?view=dashboard">Dashboard</a>
             <a href="../modules/membership/index.php">Vehicles</a>
             <a href="../modules/parking/index.php">Parking Areas</a>
             <a href="../modules/booking/index.php">Bookings</a>
+            <a href="../Moudel1/Admin.php?view=register">Register Student</a>
+            <a href="../Moudel1/Admin.php?view=manage">Manage Profile</a>
             <a href="../Moudel1/Admin.php?view=profile">Profile</a>
         </div>
 
