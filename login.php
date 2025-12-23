@@ -2,8 +2,15 @@
 require_once 'config/session.php';
 require_once 'config/database.php';
 
+// Store redirect URL if provided
+$redirect_url = $_GET['redirect'] ?? $_POST['redirect'] ?? '';
+
 // Redirect if already logged in
 if (isset($_SESSION['user_id']) && isset($_SESSION['user_type'])) {
+    if ($redirect_url) {
+        header("Location: " . $redirect_url);
+        exit();
+    }
     switch ($_SESSION['user_type']) {
         case 'admin':
             header("Location: admin/dashboard.php");
@@ -46,6 +53,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['login'])) {
                 $_SESSION['email'] = $user['Email'];
                 $_SESSION['user_type'] = $user['UserType'];
                 $_SESSION['login_time'] = time();
+
+                // Redirect to custom URL if provided
+                if ($redirect_url) {
+                    header("Location: " . $redirect_url);
+                    exit();
+                }
 
                 switch ($user['UserType']) {
                     case 'admin':
@@ -305,6 +318,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['reset'])) {
         <?php else: ?>
             <!-- Login Form -->
             <form method="POST" action="">
+                <input type="hidden" name="redirect" value="<?php echo htmlspecialchars($redirect_url); ?>">
                 <div class="form-group">
                     <label for="email">Email Address</label>
                     <input type="email" id="email" name="email" required

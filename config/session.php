@@ -12,7 +12,7 @@ if (isset($_SESSION['login_time'])) {
     if ($elapsed_time > $timeout_duration) {
         session_unset();
         session_destroy();
-        header("Location: ../login.php?timeout=1");
+        header("Location: /mawgifi_system/login.php?timeout=1");
         exit();
     }
 }
@@ -52,7 +52,7 @@ function isStudent() {
 // Redirect if not logged in
 function requireLogin() {
     if (!isLoggedIn()) {
-        header("Location: login.php");
+        header("Location: /mawgifi_system/login.php");
         exit();
     }
 }
