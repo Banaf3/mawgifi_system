@@ -12,6 +12,11 @@ $base_url = (isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on' ? "https" : 
 
 $conn = getDBConnection();
 
+// Enable error reporting for debugging
+if (!$conn) {
+    die("Connection failed: " . mysqli_connect_error());
+}
+
 if ($is_admin_or_staff) {
     // Fetch ALL bookings for Admin/Staff
     $stmt = $conn->prepare(
@@ -42,8 +47,42 @@ if ($is_admin_or_staff) {
     $stmt->bind_param("i", $user_id);
 }
 
+if (!$stmt) {
+    die("Query preparation failed: " . $conn->error);
+}
+
 $stmt->execute();
-$bookings = $stmt->get_result()->fetch_all(MYSQLI_ASSOC);
+$result = $stmt->get_result();
+if (!$result) {
+    die("Query execution failed: " . $stmt->error);
+}
+$bookings = $result->fetch_all(MYSQLI_ASSOC);
+
+// Calculate status for each booking
+foreach ($bookings as &$booking) {
+    $now = time();
+    $start = strtotime($booking['booking_start']);
+    $end = strtotime($booking['booking_end']);
+    
+    // Check if checked out
+    if (isset($booking['check_out']) && !empty($booking['check_out'])) {
+        $booking['status'] = 'completed';
+    }
+    // Check if checked in or currently within booking time
+    elseif ((isset($booking['check_in']) && !empty($booking['check_in'])) || ($now >= $start && $now <= $end)) {
+        $booking['status'] = 'active';
+    }
+    // Check if booking has ended
+    elseif ($now > $end) {
+        $booking['status'] = 'completed';
+    }
+    // Otherwise it's upcoming
+    else {
+        $booking['status'] = 'upcoming';
+    }
+}
+unset($booking);
+
 $stmt->close();
 $conn->close();
 ?>

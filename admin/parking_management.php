@@ -745,8 +745,12 @@ $conn->close();
                     </div>
 
                     <div class="form-group">
-                        <label for="qr_code">QR Code (Optional)</label>
-                        <input type="text" id="qr_code" name="qr_code" placeholder="Leave empty to auto-generate">
+                        <label for="qr_code">QR Code Preview</label>
+                        <div id="qr_preview_container" style="margin: 10px 0; text-align: center; padding: 15px; background: #f7fafc; border-radius: 8px; display: none;">
+                            <img id="qr_preview_image" src="" alt="QR Code" style="width: 150px; height: 150px; border-radius: 8px; border: 2px solid #e2e8f0;">
+                            <p style="margin-top: 10px; color: #718096; font-size: 13px;">Scan this QR at the parking slot</p>
+                        </div>
+                        <input type="hidden" id="qr_code" name="qr_code" placeholder="Leave empty to auto-generate">
                     </div>
 
                     <div class="form-group">
@@ -968,6 +972,14 @@ $conn->close();
             document.getElementById('space_number').value = space.space_number;
             document.getElementById('qr_code').value = space.qr_code || '';
             document.getElementById('space_availability').value = space.Availability_id || '';
+            
+            // Generate and show QR code preview
+            const baseUrl = window.location.origin + '/mawgifi_system';
+            const qrData = encodeURIComponent(baseUrl + '/modules/booking/scan.php?slot=' + space.space_number);
+            const qrCodeUrl = 'https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=' + qrData;
+            document.getElementById('qr_preview_image').src = qrCodeUrl;
+            document.getElementById('qr_preview_container').style.display = 'block';
+            
             document.getElementById('spaceModal').classList.add('show');
         }
 
