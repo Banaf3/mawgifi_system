@@ -63,7 +63,7 @@ foreach ($bookings as &$booking) {
     $now = time();
     $start = strtotime($booking['booking_start']);
     $end = strtotime($booking['booking_end']);
-    
+
     // Check if checked out
     if (isset($booking['check_out']) && !empty($booking['check_out'])) {
         $booking['status'] = 'completed';
@@ -542,7 +542,8 @@ $conn->close();
                                 <div class="booking-details">
                                     <?php if (!empty($booking['student_name'])): ?>
                                         <div style="font-weight:600;color:#667eea;margin-bottom:2px;">User:
-                                            <?php echo htmlspecialchars($booking['student_name']); ?></div>
+                                            <?php echo htmlspecialchars($booking['student_name']); ?>
+                                        </div>
                                     <?php endif; ?>
                                     <?php echo htmlspecialchars($booking['area_name'] ?? 'Unknown Area'); ?> •
                                     <?php echo htmlspecialchars($booking['vehicle_model'] . ' - ' . $booking['license_plate']); ?>
@@ -575,7 +576,8 @@ $conn->close();
                                 <div class="booking-details">
                                     <?php if (!empty($booking['student_name'])): ?>
                                         <div style="font-weight:600;color:#667eea;margin-bottom:2px;">User:
-                                            <?php echo htmlspecialchars($booking['student_name']); ?></div>
+                                            <?php echo htmlspecialchars($booking['student_name']); ?>
+                                        </div>
                                     <?php endif; ?>
                                     <?php echo htmlspecialchars($booking['area_name'] ?? 'Unknown Area'); ?> •
                                     <?php echo htmlspecialchars($booking['vehicle_model'] . ' - ' . $booking['license_plate']); ?>
@@ -616,7 +618,8 @@ $conn->close();
                                 <div class="booking-details">
                                     <?php if (!empty($booking['student_name'])): ?>
                                         <div style="font-weight:600;color:#667eea;margin-bottom:2px;">User:
-                                            <?php echo htmlspecialchars($booking['student_name']); ?></div>
+                                            <?php echo htmlspecialchars($booking['student_name']); ?>
+                                        </div>
                                     <?php endif; ?>
                                     <?php echo htmlspecialchars($booking['area_name'] ?? 'Unknown Area'); ?> •
                                     <?php echo htmlspecialchars($booking['vehicle_model'] . ' - ' . $booking['license_plate']); ?>
@@ -667,7 +670,7 @@ $conn->close();
 
                 <div class="form-group">
                     <label for="editDate">📅 Booking Date</label>
-                    <input type="date" id="editDate" name="booking_date" required>
+                    <input type="date" id="editDate" name="date" required>
                 </div>
 
                 <div class="form-group">
