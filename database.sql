@@ -153,10 +153,14 @@ INSERT INTO Availability (status, date, start_time, end_time) VALUES
 ('maintenance', '2025-12-13', '08:00:00', '18:00:00');
 
 -- Sample Parking Areas
+-- Area A: Slots 1-14, Area B: Slots 15-44, Area C: Slots 45-65
+-- Area D: Slots 66-86, Area E: Slots 87-100
 INSERT INTO ParkingArea (Availability_id, area_name, area_type, AreaSize) VALUES
 (1, 'Area A', 'Standard', 500.00),
-(2, 'Area B', 'Premium', 300.00),
-(3, 'Area C', 'VIP', 200.00);
+(2, 'Area B', 'Standard', 800.00),
+(3, 'Area C', 'Standard', 600.00),
+(1, 'Area D', 'Standard', 600.00),
+(2, 'Area E', 'Standard', 400.00);
 
 -- Sample Parking Spaces
 INSERT INTO ParkingSpace (area_id, Availability_id, space_number, qr_code, qr_img_path) VALUES
