@@ -1,0 +1,167 @@
+:root {
+    --primary-grad: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    --text-dark: #2d3748;
+    --text-light: #718096;
+    --bg-light: #f7fafc;
+    --success: #c6f6d5;
+    --success-text: #276749;
+    --warning: #fef3c7;
+    --warning-text: #92400e;
+    --error: #fed7d7;
+    --error-text: #c53030;
+}
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: 'Segoe UI', sans-serif;
+    background: var(--bg-light);
+    color: var(--text-dark);
+}
+
+/* Navbar */
+.navbar {
+    background: var(--primary-grad);
+    color: #fff;
+    padding: 15px 40px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.navbar .brand {
+    font-size: 1.6rem;
+    font-weight: 800;
+}
+
+.nav-links {
+    display: flex;
+    gap: 15px;
+}
+
+.nav-links a {
+    color: rgba(255, 255, 255, 0.85);
+    text-decoration: none;
+    padding: 10px 18px;
+    border-radius: 50px;
+    font-weight: 500;
+}
+
+.nav-links a:hover {
+    background: rgba(255, 255, 255, 0.15);
+}
+
+.nav-links a.active {
+    background: #fff;
+    color: #6a67ce;
+    font-weight: 700;
+}
+
+.user-profile {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+}
+
+.avatar {
+    width: 35px;
+    height: 35px;
+    background: rgba(255, 255, 255, 0.2);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: bold;
+}
+
+.logout-btn {
+    background: rgba(0, 0, 0, 0.2);
+    color: #fff;
+    padding: 8px 18px;
+    border-radius: 20px;
+    text-decoration: none;
+    font-size: 13px;
+}
+
+.logout-btn:hover {
+    background: #e53e3e;
+}
+
+/* Layout */
+.container {
+    max-width: 1000px;
+    margin: 30px auto;
+    padding: 0 20px;
+}
+
+.page-title {
+    font-size: 1.5rem;
+    margin-bottom: 20px;
+}
+
+/* Components */
+.btn {
+    border: none;
+    padding: 10px 20px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-weight: 600;
+    font-size: 0.9rem;
+    transition: opacity 0.2s;
+}
+
+.btn:hover {
+    opacity: 0.9;
+}
+
+/* Status Badges */
+.booking-status,
+.status-badge {
+    padding: 6px 14px;
+    border-radius: 20px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    display: inline-block;
+}
+
+.status-pending {
+    background: var(--warning);
+    color: var(--warning-text);
+}
+
+.status-checked_in {
+    background: var(--success);
+    color: var(--success-text);
+}
+
+.status-completed {
+    background: #e2e8f0;
+    color: #4a5568;
+}
+
+.status-cancelled {
+    background: var(--error);
+    color: var(--error-text);
+}
+
+/* Common Alerts */
+.alert {
+    padding: 15px;
+    border-radius: 10px;
+    margin-bottom: 20px;
+    font-size: 0.95rem;
+}
+
+.alert-error {
+    background-color: var(--error);
+    color: var(--error-text);
+}
+
+.alert-success {
+    background-color: var(--success);
+    color: var(--success-text);
+}

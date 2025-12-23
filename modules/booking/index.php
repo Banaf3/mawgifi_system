@@ -31,101 +31,8 @@ $conn->close();
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>My Bookings - Mawgifi</title>
+    <link rel="stylesheet" href="../../assets/module.css">
     <style>
-        :root {
-            --grad: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-        }
-
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-
-        body {
-            font-family: 'Segoe UI', sans-serif;
-            background: #f7fafc;
-            color: #2d3748;
-        }
-
-        .navbar {
-            background: var(--grad);
-            color: #fff;
-            padding: 15px 40px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-
-        .navbar .brand {
-            font-size: 1.6rem;
-            font-weight: 800;
-        }
-
-        .nav-links {
-            display: flex;
-            gap: 15px;
-        }
-
-        .nav-links a {
-            color: rgba(255, 255, 255, 0.85);
-            text-decoration: none;
-            padding: 10px 18px;
-            border-radius: 50px;
-            font-weight: 500;
-        }
-
-        .nav-links a:hover {
-            background: rgba(255, 255, 255, 0.15);
-        }
-
-        .nav-links a.active {
-            background: #fff;
-            color: #6a67ce;
-            font-weight: 700;
-        }
-
-        .user-profile {
-            display: flex;
-            align-items: center;
-            gap: 15px;
-        }
-
-        .avatar {
-            width: 35px;
-            height: 35px;
-            background: rgba(255, 255, 255, 0.2);
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-weight: bold;
-        }
-
-        .logout-btn {
-            background: rgba(0, 0, 0, 0.2);
-            color: #fff;
-            padding: 8px 18px;
-            border-radius: 20px;
-            text-decoration: none;
-            font-size: 13px;
-        }
-
-        .logout-btn:hover {
-            background: #e53e3e;
-        }
-
-        .container {
-            max-width: 900px;
-            margin: 30px auto;
-            padding: 0 20px;
-        }
-
-        .page-title {
-            font-size: 1.5rem;
-            margin-bottom: 20px;
-        }
-
         .booking-card {
             background: #fff;
             border-radius: 12px;
@@ -138,7 +45,7 @@ $conn->close();
         }
 
         .slot-badge {
-            background: var(--grad);
+            background: var(--primary-grad);
             color: #fff;
             padding: 15px 20px;
             border-radius: 10px;
@@ -169,33 +76,6 @@ $conn->close();
             font-size: 0.85rem;
             color: #718096;
             margin: 3px 0;
-        }
-
-        .booking-status {
-            padding: 6px 14px;
-            border-radius: 20px;
-            font-size: 0.75rem;
-            font-weight: 600;
-        }
-
-        .status-pending {
-            background: #fef3c7;
-            color: #92400e;
-        }
-
-        .status-checked_in {
-            background: #c6f6d5;
-            color: #276749;
-        }
-
-        .status-completed {
-            background: #e2e8f0;
-            color: #4a5568;
-        }
-
-        .status-cancelled {
-            background: #fed7d7;
-            color: #c53030;
         }
 
         .qr-preview {
@@ -259,7 +139,7 @@ $conn->close();
             font-weight: 600;
         }
 
-        /* Modal */
+        /* Modal specific styles */
         .modal-overlay {
             display: none;
             position: fixed;
@@ -297,17 +177,17 @@ $conn->close();
             margin-bottom: 5px;
         }
 
-        .modal input,
-        .modal select {
+        .time-row {
+            display: flex;
+            gap: 10px;
+        }
+
+        .time-row select,
+        .modal input {
             width: 100%;
             padding: 10px;
             border: 1px solid #e2e8f0;
             border-radius: 8px;
-        }
-
-        .time-row {
-            display: flex;
-            gap: 10px;
         }
 
         .time-row select {
@@ -335,7 +215,7 @@ $conn->close();
         }
 
         .btn-modal-save {
-            background: var(--grad);
+            background: var(--primary-grad);
             border: none;
             color: #fff;
         }
@@ -426,9 +306,8 @@ $conn->close();
             <div class="form-group">
                 <label>Start Time</label>
                 <div class="time-row">
-                    <select
-                        id="startHour"><?php for ($i = 1; $i <= 12; $i++)
-                            echo "<option value='$i'>$i</option>"; ?></select>
+                    <select id="startHour"><?php for ($i = 1; $i <= 12; $i++)
+                        echo "<option value='$i'>$i</option>"; ?></select>
                     <select id="startAmPm">
                         <option>AM</option>
                         <option>PM</option>

@@ -4,16 +4,20 @@ require_once '../../../config/database.php';
 
 header('Content-Type: application/json');
 
-if (!isLoggedIn()) { echo json_encode(['success' => false, 'message' => 'Not logged in']); exit; }
+if (!isLoggedIn()) {
+    echo json_encode(['success' => false, 'message' => 'Not logged in']);
+    exit;
+}
 
 $data = json_decode(file_get_contents('php://input'), true);
-$booking_id = (int)($data['booking_id'] ?? 0);
+$booking_id = (int) ($data['booking_id'] ?? 0);
 $date = $data['date'] ?? '';
 $start_time = $data['start_time'] ?? '';
 $end_time = $data['end_time'] ?? '';
 
 if (!$booking_id || !$date || !$start_time || !$end_time) {
-    echo json_encode(['success' => false, 'message' => 'Missing required fields']); exit;
+    echo json_encode(['success' => false, 'message' => 'Missing required fields']);
+    exit;
 }
 
 $user_id = getCurrentUserId();
@@ -30,9 +34,18 @@ $stmt->execute();
 $booking = $stmt->get_result()->fetch_assoc();
 $stmt->close();
 
-if (!$booking) { echo json_encode(['success' => false, 'message' => 'Booking not found']); exit; }
-if ($booking['status'] !== 'pending') { echo json_encode(['success' => false, 'message' => 'Can only update pending bookings']); exit; }
-if (strtotime($booking['booking_start']) <= time()) { echo json_encode(['success' => false, 'message' => 'Cannot update started booking']); exit; }
+if (!$booking) {
+    echo json_encode(['success' => false, 'message' => 'Booking not found']);
+    exit;
+}
+if ($booking['status'] !== 'pending') {
+    echo json_encode(['success' => false, 'message' => 'Can only update pending bookings']);
+    exit;
+}
+if (strtotime($booking['booking_start']) <= time()) {
+    echo json_encode(['success' => false, 'message' => 'Cannot update started booking']);
+    exit;
+}
 
 // Format new times
 $booking_start = $date . ' ' . $start_time . ':00';
@@ -43,16 +56,11 @@ if (strtotime($end_time) <= strtotime($start_time)) {
 
 // Check for conflicts
 $space_id = $booking['Space_id'];
-$stmt = $conn->prepare(
-    "SELECT 1 FROM Booking WHERE Space_id = ? AND booking_id != ? AND status IN ('pending', 'checked_in')
-     AND ((booking_start < ? AND booking_end > ?) OR (booking_start < ? AND booking_end > ?) OR (booking_start >= ? AND booking_end <= ?)) LIMIT 1"
-);
-$stmt->bind_param("iissssss", $space_id, $booking_id, $booking_end, $booking_start, $booking_end, $booking_start, $booking_start, $booking_end);
-$stmt->execute();
-if ($stmt->get_result()->num_rows > 0) {
-    echo json_encode(['success' => false, 'message' => 'Time slot conflicts with another booking']); exit;
+require_once 'utils.php';
+if (checkBookingConflict($conn, $space_id, $booking_start, $booking_end, $booking_id)) {
+    echo json_encode(['success' => false, 'message' => 'Time slot conflicts with another booking']);
+    exit;
 }
-$stmt->close();
 
 // Update booking
 $stmt = $conn->prepare("UPDATE Booking SET booking_start = ?, booking_end = ? WHERE booking_id = ?");

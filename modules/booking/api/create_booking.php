@@ -4,17 +4,21 @@ require_once '../../../config/database.php';
 
 header('Content-Type: application/json');
 
-if (!isLoggedIn()) { echo json_encode(['success' => false, 'message' => 'Not logged in']); exit; }
+if (!isLoggedIn()) {
+    echo json_encode(['success' => false, 'message' => 'Not logged in']);
+    exit;
+}
 
 $data = json_decode(file_get_contents('php://input'), true);
-$vehicle_id = (int)($data['vehicle_id'] ?? 0);
+$vehicle_id = (int) ($data['vehicle_id'] ?? 0);
 $slot_id = $data['slot_id'] ?? '';
 $date = $data['date'] ?? '';
 $start_time = $data['start_time'] ?? '';
 $end_time = $data['end_time'] ?? '';
 
 if (!$vehicle_id || !$slot_id || !$date || !$start_time || !$end_time) {
-    echo json_encode(['success' => false, 'message' => 'Missing required fields']); exit;
+    echo json_encode(['success' => false, 'message' => 'Missing required fields']);
+    exit;
 }
 
 $user_id = getCurrentUserId();
@@ -25,7 +29,8 @@ $stmt = $conn->prepare("SELECT 1 FROM Vehicle WHERE vehicle_id = ? AND user_id =
 $stmt->bind_param("ii", $vehicle_id, $user_id);
 $stmt->execute();
 if ($stmt->get_result()->num_rows === 0) {
-    echo json_encode(['success' => false, 'message' => 'Invalid vehicle']); exit;
+    echo json_encode(['success' => false, 'message' => 'Invalid vehicle']);
+    exit;
 }
 $stmt->close();
 
@@ -54,16 +59,11 @@ if (strtotime($booking_end) <= strtotime($booking_start)) {
 }
 
 // Check for conflicts
-$stmt = $conn->prepare(
-    "SELECT 1 FROM Booking WHERE Space_id = ? AND status IN ('pending', 'checked_in')
-     AND ((booking_start < ? AND booking_end > ?) OR (booking_start < ? AND booking_end > ?) OR (booking_start >= ? AND booking_end <= ?)) LIMIT 1"
-);
-$stmt->bind_param("issssss", $space_id, $booking_end, $booking_start, $booking_end, $booking_start, $booking_start, $booking_end);
-$stmt->execute();
-if ($stmt->get_result()->num_rows > 0) {
-    echo json_encode(['success' => false, 'message' => 'Slot already booked']); exit;
+require_once 'utils.php';
+if (checkBookingConflict($conn, $space_id, $booking_start, $booking_end)) {
+    echo json_encode(['success' => false, 'message' => 'Slot already booked']);
+    exit;
 }
-$stmt->close();
 
 // Create booking
 $qr_url = 'http://localhost/mawgifi_system/modules/booking/scan.php?slot=' . $slot_id;
