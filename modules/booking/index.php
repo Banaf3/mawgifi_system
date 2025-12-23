@@ -53,7 +53,7 @@ $conn->close();
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>My Bookings - Mawgifi</title>
+    <title><?= $is_admin_or_staff ? 'Bookings' : 'My Bookings' ?> - Mawgifi</title>
     <link rel="stylesheet" href="../../assets/module.css">
     <style>
         .booking-card {
@@ -457,7 +457,7 @@ $conn->close();
                 <a href="../../Moudel1/Student.php?view=dashboard">Dashboard</a>
                 <a href="../../Moudel1/Student.php?view=vehicles">My Vehicles</a>
                 <a href="../parking/index.php">Find Parking</a>
-                <a href="index.php" class="active">My Bookings</a>
+                <a href="index.php" class="active"><?= $is_admin_or_staff ? 'Bookings' : 'My Bookings' ?></a>
                 <a href="../../Moudel1/Student.php?view=profile">Profile</a>
             <?php endif; ?>
         </div>
@@ -469,7 +469,7 @@ $conn->close();
     </nav>
 
     <div class="container">
-        <h1 class="page-title">🎫 My Bookings</h1>
+        <h1 class="page-title">🎫 <?= $is_admin_or_staff ? 'Bookings' : 'My Bookings' ?></h1>
 
         <?php if (empty($bookings)): ?>
             <div class="empty-state">
@@ -485,7 +485,10 @@ $conn->close();
                 // Group bookings by status
                 $grouped_bookings = ['active' => [], 'upcoming' => [], 'completed' => []];
                 foreach ($bookings as $booking) {
-                    $grouped_bookings[$booking['status']][] = $booking;
+                    $status = $booking['status'] ?? 'upcoming'; // Default to 'upcoming' if status not set
+                    if (isset($grouped_bookings[$status])) {
+                        $grouped_bookings[$status][] = $booking;
+                    }
                 }
                 ?>
 
