@@ -23,13 +23,26 @@ if (!$booking_id || !$date || !$start_time || !$end_time) {
 $user_id = getCurrentUserId();
 $conn = getDBConnection();
 
-// Verify booking belongs to user and is pending
-$stmt = $conn->prepare(
-    "SELECT b.Space_id, b.booking_start, b.status FROM Booking b
-     JOIN Vehicle v ON b.vehicle_id = v.vehicle_id
-     WHERE b.booking_id = ? AND v.user_id = ?"
-);
-$stmt->bind_param("ii", $booking_id, $user_id);
+// Check role
+$user_type = $_SESSION['user_type'] ?? 'user';
+$is_admin_or_staff = (strtolower($user_type) === 'admin' || strtolower($user_type) === 'staff');
+
+if ($is_admin_or_staff) {
+    // Admin/Staff can update ANY booking
+    $stmt = $conn->prepare(
+        "SELECT Space_id, booking_start, status FROM Booking WHERE booking_id = ?"
+    );
+    $stmt->bind_param("i", $booking_id);
+} else {
+    // Regular users can only update THEIR OWN bookings
+    $stmt = $conn->prepare(
+        "SELECT b.Space_id, b.booking_start, b.status FROM Booking b
+         JOIN Vehicle v ON b.vehicle_id = v.vehicle_id
+         WHERE b.booking_id = ? AND v.user_id = ?"
+    );
+    $stmt->bind_param("ii", $booking_id, $user_id);
+}
+
 $stmt->execute();
 $booking = $stmt->get_result()->fetch_assoc();
 $stmt->close();
