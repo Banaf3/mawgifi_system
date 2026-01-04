@@ -209,7 +209,7 @@ $stmt->close();
 
 // Fetch user's vehicles
 $vehicles = [];
-$stmt = $conn->prepare("SELECT vehicle_id, vehicle_type, vehicle_model, license_plate, created_at, approved_by, Approved_date, status, rejection_reason, grant_document FROM Vehicle WHERE user_id = ? ORDER BY created_at DESC");
+$stmt = $conn->prepare("SELECT vehicle_id, vehicle_type, vehicle_model, license_plate, created_at, Approved_date, status, rejection_reason, grant_document FROM Vehicle WHERE user_id = ? ORDER BY created_at DESC");
 $stmt->bind_param("i", $user_id);
 $stmt->execute();
 $result = $stmt->get_result();
