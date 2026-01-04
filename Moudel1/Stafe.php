@@ -40,16 +40,21 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['approve_vehicle'])) {
 // Handle Reject Vehicle (Mark as rejected)
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['reject_vehicle'])) {
     $vehicle_id = intval($_POST['vehicle_id']);
+    $rejection_reason = trim($_POST['rejection_reason'] ?? '');
 
-    $stmt = $conn->prepare("UPDATE Vehicle SET status = 'rejected' WHERE vehicle_id = ? AND status = 'pending'");
-    $stmt->bind_param("i", $vehicle_id);
-
-    if ($stmt->execute() && $stmt->affected_rows > 0) {
-        $success_message = "Vehicle rejected.";
+    if (empty($rejection_reason)) {
+        $error_message = "Please provide a reason for rejection.";
     } else {
-        $error_message = "Failed to reject vehicle.";
+        $stmt = $conn->prepare("UPDATE Vehicle SET status = 'rejected', rejection_reason = ? WHERE vehicle_id = ? AND status = 'pending'");
+        $stmt->bind_param("si", $rejection_reason, $vehicle_id);
+
+        if ($stmt->execute() && $stmt->affected_rows > 0) {
+            $success_message = "Vehicle rejected.";
+        } else {
+            $error_message = "Failed to reject vehicle.";
+        }
+        $stmt->close();
     }
-    $stmt->close();
 }
 
 // Handle Profile Update
@@ -328,10 +333,7 @@ closeDBConnection($conn);
                                         <input type="hidden" name="vehicle_id" value="<?php echo $vehicle['vehicle_id']; ?>">
                                         <button type="submit" name="approve_vehicle" class="btn btn-approve">✓ Approve</button>
                                     </form>
-                                    <form method="POST" action="" style="display: inline;" onsubmit="return confirm('Are you sure you want to reject this vehicle?');">
-                                        <input type="hidden" name="vehicle_id" value="<?php echo $vehicle['vehicle_id']; ?>">
-                                        <button type="submit" name="reject_vehicle" class="btn btn-reject">✗ Reject</button>
-                                    </form>
+                                    <button type="button" class="btn btn-reject" onclick="openRejectModal(<?php echo $vehicle['vehicle_id']; ?>, '<?php echo htmlspecialchars($vehicle['vehicle_model'], ENT_QUOTES); ?>', '<?php echo htmlspecialchars($vehicle['license_plate'], ENT_QUOTES); ?>')">✗ Reject</button>
                                 </div>
                             </div>
                         <?php endforeach; ?>
@@ -373,6 +375,49 @@ closeDBConnection($conn);
         </div>
         <?php endif; ?>
     </div>
+
+    <!-- Reject Vehicle Modal -->
+    <div id="rejectVehicleModal" class="modal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 1000; justify-content: center; align-items: center;">
+        <div class="modal-content" style="background: white; padding: 30px; border-radius: 12px; max-width: 500px; width: 90%; position: relative;">
+            <span class="close-modal" onclick="closeRejectModal()" style="position: absolute; top: 15px; right: 20px; font-size: 24px; cursor: pointer; color: #666;">&times;</span>
+            <h2 style="margin-bottom: 10px; color: #333;">Reject Vehicle</h2>
+            <p id="rejectVehicleInfo" style="color: #666; margin-bottom: 20px;"></p>
+            <form method="POST" action="">
+                <input type="hidden" id="reject_vehicle_id" name="vehicle_id">
+                
+                <div class="form-group" style="margin-bottom: 20px;">
+                    <label for="rejection_reason" style="display: block; margin-bottom: 8px; font-weight: 500;">Reason for Rejection</label>
+                    <textarea id="rejection_reason" name="rejection_reason" required rows="4" placeholder="Please explain why this vehicle is being rejected..." style="width: 100%; padding: 12px; border: 2px solid #e0e0e0; border-radius: 8px; font-size: 14px; resize: vertical;"></textarea>
+                </div>
+
+                <div style="display: flex; gap: 10px; justify-content: flex-end;">
+                    <button type="button" onclick="closeRejectModal()" class="btn" style="background: #6c757d; color: white; padding: 10px 20px; border: none; border-radius: 8px; cursor: pointer;">Cancel</button>
+                    <button type="submit" name="reject_vehicle" class="btn btn-reject" style="padding: 10px 20px;">Reject Vehicle</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        function openRejectModal(vehicleId, vehicleModel, licensePlate) {
+            document.getElementById('reject_vehicle_id').value = vehicleId;
+            document.getElementById('rejectVehicleInfo').textContent = 'Vehicle: ' + vehicleModel + ' (' + licensePlate + ')';
+            document.getElementById('rejection_reason').value = '';
+            document.getElementById('rejectVehicleModal').style.display = 'flex';
+        }
+
+        function closeRejectModal() {
+            document.getElementById('rejectVehicleModal').style.display = 'none';
+        }
+
+        // Close modal when clicking outside
+        window.onclick = function(event) {
+            var modal = document.getElementById('rejectVehicleModal');
+            if (event.target === modal) {
+                closeRejectModal();
+            }
+        }
+    </script>
 </body>
 
 </html>

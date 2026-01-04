@@ -218,10 +218,35 @@ body {
     background: #e53e3e;
     padding: 8px 15px;
     font-size: 12px;
+    min-width: 60px;
 }
 
 .btn-danger:hover {
     background: #c53030;
+}
+
+.btn-edit {
+    background: #3182ce;
+    padding: 8px 15px;
+    font-size: 12px;
+    margin-right: 5px;
+    min-width: 60px;
+}
+
+.btn-edit:hover {
+    background: #2c5282;
+}
+
+.btn-reason {
+    background: #ed8936;
+    padding: 8px 15px;
+    font-size: 12px;
+    margin-right: 5px;
+    min-width: 60px;
+}
+
+.btn-reason:hover {
+    background: #dd6b20;
 }
 
 .vehicles-section h2 {

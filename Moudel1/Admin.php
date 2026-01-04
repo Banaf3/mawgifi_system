@@ -128,6 +128,45 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['update_user'])) {
     }
 }
 
+// Handle Register Student
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['register_student'])) {
+    $new_username = trim($_POST['new_username']);
+    $new_email = trim($_POST['new_email']);
+    $new_phone = trim($_POST['new_phone']);
+    $new_password = $_POST['new_password'];
+    $confirm_new_password = $_POST['confirm_new_password'];
+
+    if (empty($new_username) || empty($new_email) || empty($new_password)) {
+        $error_message = "Username, Email and Password are required.";
+    } elseif ($new_password !== $confirm_new_password) {
+        $error_message = "Passwords do not match.";
+    } else {
+        // Check if email already exists
+        $check_stmt = $conn->prepare("SELECT user_id FROM User WHERE Email = ?");
+        $check_stmt->bind_param("s", $new_email);
+        $check_stmt->execute();
+        $check_result = $check_stmt->get_result();
+        
+        if ($check_result->num_rows > 0) {
+            $error_message = "Email already exists!";
+        } else {
+            $hashed_password = password_hash($new_password, PASSWORD_DEFAULT);
+            $user_type = 'user'; // Student type
+            
+            $stmt = $conn->prepare("INSERT INTO User (UserName, Email, PhoneNumber, password, UserType) VALUES (?, ?, ?, ?, ?)");
+            $stmt->bind_param("sssss", $new_username, $new_email, $new_phone, $hashed_password, $user_type);
+            
+            if ($stmt->execute()) {
+                $success_message = "Student registered successfully! They can now login.";
+            } else {
+                $error_message = "Failed to register student: " . $conn->error;
+            }
+            $stmt->close();
+        }
+        $check_stmt->close();
+    }
+}
+
 // Fetch all users for manage view
 $all_users = [];
 if ($current_view === 'manage') {

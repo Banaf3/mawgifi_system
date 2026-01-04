@@ -69,6 +69,39 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['delete_vehicle'])) {
     $stmt->close();
 }
 
+// Handle Edit Vehicle
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['edit_vehicle'])) {
+    $vehicle_id = intval($_POST['edit_vehicle_id']);
+    $vehicle_type = trim($_POST['edit_vehicle_type']);
+    $vehicle_model = trim($_POST['edit_vehicle_model']);
+    $license_plate = trim($_POST['edit_license_plate']);
+
+    if (empty($vehicle_type) || empty($vehicle_model) || empty($license_plate)) {
+        $error_message = "Please fill in all fields.";
+    } else {
+        // Check if license plate already exists for another vehicle
+        $check_stmt = $conn->prepare("SELECT vehicle_id FROM Vehicle WHERE license_plate = ? AND vehicle_id != ?");
+        $check_stmt->bind_param("si", $license_plate, $vehicle_id);
+        $check_stmt->execute();
+        $check_result = $check_stmt->get_result();
+
+        if ($check_result->num_rows > 0) {
+            $error_message = "This license plate is already registered to another vehicle.";
+        } else {
+            $stmt = $conn->prepare("UPDATE Vehicle SET vehicle_type = ?, vehicle_model = ?, license_plate = ? WHERE vehicle_id = ? AND user_id = ?");
+            $stmt->bind_param("sssii", $vehicle_type, $vehicle_model, $license_plate, $vehicle_id, $user_id);
+
+            if ($stmt->execute() && $stmt->affected_rows >= 0) {
+                $success_message = "Vehicle updated successfully!";
+            } else {
+                $error_message = "Failed to update vehicle.";
+            }
+            $stmt->close();
+        }
+        $check_stmt->close();
+    }
+}
+
 // Handle Profile Update
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['update_profile'])) {
     $new_username = trim($_POST['username']);
@@ -113,7 +146,7 @@ $stmt->close();
 
 // Fetch user's vehicles
 $vehicles = [];
-$stmt = $conn->prepare("SELECT vehicle_id, vehicle_type, vehicle_model, license_plate, created_at, approved_by, Approved_date, status FROM Vehicle WHERE user_id = ? ORDER BY created_at DESC");
+$stmt = $conn->prepare("SELECT vehicle_id, vehicle_type, vehicle_model, license_plate, created_at, approved_by, Approved_date, status, rejection_reason FROM Vehicle WHERE user_id = ? ORDER BY created_at DESC");
 $stmt->bind_param("i", $user_id);
 $stmt->execute();
 $result = $stmt->get_result();
@@ -354,6 +387,10 @@ closeDBConnection($conn);
                                         <?php endif; ?>
                                     </td>
                                     <td>
+                                        <button type="button" class="btn btn-edit" onclick="openEditModal(<?php echo $vehicle['vehicle_id']; ?>, '<?php echo htmlspecialchars($vehicle['vehicle_type'], ENT_QUOTES); ?>', '<?php echo htmlspecialchars($vehicle['vehicle_model'], ENT_QUOTES); ?>', '<?php echo htmlspecialchars($vehicle['license_plate'], ENT_QUOTES); ?>')">Edit</button>
+                                        <?php if ($vehicle['status'] === 'rejected' && !empty($vehicle['rejection_reason'])): ?>
+                                            <button type="button" class="btn btn-reason" onclick="openReasonModal('<?php echo htmlspecialchars($vehicle['rejection_reason'], ENT_QUOTES); ?>')">Reason</button>
+                                        <?php endif; ?>
                                         <form method="POST" action="" style="display: inline;" onsubmit="return confirm('Are you sure you want to delete this vehicle?');">
                                             <input type="hidden" name="vehicle_id" value="<?php echo $vehicle['vehicle_id']; ?>">
                                             <button type="submit" name="delete_vehicle" class="btn btn-danger">Delete</button>
@@ -368,6 +405,89 @@ closeDBConnection($conn);
         </div>
         <?php endif; ?>
     </div>
+
+    <!-- Reason Modal -->
+    <div id="reasonModal" class="modal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 1000; justify-content: center; align-items: center;">
+        <div class="modal-content" style="background: white; padding: 30px; border-radius: 12px; max-width: 500px; width: 90%; position: relative;">
+            <span class="close-modal" onclick="closeReasonModal()" style="position: absolute; top: 15px; right: 20px; font-size: 24px; cursor: pointer; color: #666;">&times;</span>
+            <h2 style="margin-bottom: 20px; color: #e53e3e;">Rejection Reason</h2>
+            <p id="rejectionReasonText" style="color: #333; line-height: 1.6;"></p>
+            <div style="display: flex; gap: 10px; justify-content: flex-end; margin-top: 20px;">
+                <button type="button" onclick="closeReasonModal()" class="btn">Close</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Edit Vehicle Modal -->
+    <div id="editVehicleModal" class="modal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 1000; justify-content: center; align-items: center;">
+        <div class="modal-content" style="background: white; padding: 30px; border-radius: 12px; max-width: 500px; width: 90%; position: relative;">
+            <span class="close-modal" onclick="closeEditModal()" style="position: absolute; top: 15px; right: 20px; font-size: 24px; cursor: pointer; color: #666;">&times;</span>
+            <h2 style="margin-bottom: 20px; color: #333;">Edit Vehicle</h2>
+            <form method="POST" action="">
+                <input type="hidden" id="edit_vehicle_id" name="edit_vehicle_id">
+                
+                <div class="form-group" style="margin-bottom: 20px;">
+                    <label for="edit_vehicle_type" style="display: block; margin-bottom: 8px; font-weight: 500;">Vehicle Type</label>
+                    <select id="edit_vehicle_type" name="edit_vehicle_type" required style="width: 100%; padding: 12px; border: 2px solid #e0e0e0; border-radius: 8px; font-size: 14px;">
+                        <option value="Car">Car</option>
+                        <option value="Motorcycle">Motorcycle</option>
+                        <option value="SUV">SUV</option>
+                        <option value="Van">Van</option>
+                    </select>
+                </div>
+
+                <div class="form-group" style="margin-bottom: 20px;">
+                    <label for="edit_vehicle_model" style="display: block; margin-bottom: 8px; font-weight: 500;">Vehicle Model</label>
+                    <input type="text" id="edit_vehicle_model" name="edit_vehicle_model" required style="width: 100%; padding: 12px; border: 2px solid #e0e0e0; border-radius: 8px; font-size: 14px;">
+                </div>
+
+                <div class="form-group" style="margin-bottom: 20px;">
+                    <label for="edit_license_plate" style="display: block; margin-bottom: 8px; font-weight: 500;">License Plate</label>
+                    <input type="text" id="edit_license_plate" name="edit_license_plate" required style="width: 100%; padding: 12px; border: 2px solid #e0e0e0; border-radius: 8px; font-size: 14px;">
+                </div>
+
+                <div style="display: flex; gap: 10px; justify-content: flex-end;">
+                    <button type="button" onclick="closeEditModal()" class="btn" style="background: #6c757d;">Cancel</button>
+                    <button type="submit" name="edit_vehicle" class="btn">Save Changes</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        function openEditModal(vehicleId, vehicleType, vehicleModel, licensePlate) {
+            document.getElementById('edit_vehicle_id').value = vehicleId;
+            document.getElementById('edit_vehicle_type').value = vehicleType;
+            document.getElementById('edit_vehicle_model').value = vehicleModel;
+            document.getElementById('edit_license_plate').value = licensePlate;
+            document.getElementById('editVehicleModal').style.display = 'flex';
+        }
+
+        function closeEditModal() {
+            document.getElementById('editVehicleModal').style.display = 'none';
+        }
+
+        function openReasonModal(reason) {
+            document.getElementById('rejectionReasonText').textContent = reason;
+            document.getElementById('reasonModal').style.display = 'flex';
+        }
+
+        function closeReasonModal() {
+            document.getElementById('reasonModal').style.display = 'none';
+        }
+
+        // Close modal when clicking outside
+        window.onclick = function(event) {
+            var editModal = document.getElementById('editVehicleModal');
+            var reasonModal = document.getElementById('reasonModal');
+            if (event.target === editModal) {
+                closeEditModal();
+            }
+            if (event.target === reasonModal) {
+                closeReasonModal();
+            }
+        }
+    </script>
 </body>
 
 </html>
