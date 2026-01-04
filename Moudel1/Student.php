@@ -27,30 +27,59 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['add_vehicle'])) {
     $vehicle_type = trim($_POST['vehicle_type']);
     $vehicle_model = trim($_POST['vehicle_model']);
     $license_plate = trim($_POST['license_plate']);
+    $grant_document = '';
 
     if (empty($vehicle_type) || empty($vehicle_model) || empty($license_plate)) {
         $error_message = "Please fill in all fields.";
     } else {
-        // Check if license plate already exists
-        $check_stmt = $conn->prepare("SELECT vehicle_id FROM Vehicle WHERE license_plate = ?");
-        $check_stmt->bind_param("s", $license_plate);
-        $check_stmt->execute();
-        $check_result = $check_stmt->get_result();
-
-        if ($check_result->num_rows > 0) {
-            $error_message = "This license plate is already registered.";
-        } else {
-            $stmt = $conn->prepare("INSERT INTO Vehicle (user_id, vehicle_type, vehicle_model, license_plate) VALUES (?, ?, ?, ?)");
-            $stmt->bind_param("isss", $user_id, $vehicle_type, $vehicle_model, $license_plate);
-
-            if ($stmt->execute()) {
-                $success_message = "Vehicle registered successfully!";
-            } else {
-                $error_message = "Failed to register vehicle. Please try again.";
+        // Handle file upload
+        if (isset($_FILES['vehicle_grant']) && $_FILES['vehicle_grant']['error'] === UPLOAD_ERR_OK) {
+            $upload_dir = '../uploads/vehicle_grants/';
+            
+            // Create directory if it doesn't exist
+            if (!is_dir($upload_dir)) {
+                mkdir($upload_dir, 0777, true);
             }
-            $stmt->close();
+            
+            $file_extension = strtolower(pathinfo($_FILES['vehicle_grant']['name'], PATHINFO_EXTENSION));
+            $allowed_extensions = ['pdf', 'jpg', 'jpeg', 'png', 'doc', 'docx'];
+            
+            if (!in_array($file_extension, $allowed_extensions)) {
+                $error_message = "Invalid file type. Allowed: PDF, JPG, PNG, DOC, DOCX";
+            } else {
+                $new_filename = 'grant_' . $user_id . '_' . time() . '.' . $file_extension;
+                $upload_path = $upload_dir . $new_filename;
+                
+                if (move_uploaded_file($_FILES['vehicle_grant']['tmp_name'], $upload_path)) {
+                    $grant_document = 'uploads/vehicle_grants/' . $new_filename;
+                } else {
+                    $error_message = "Failed to upload file.";
+                }
+            }
         }
-        $check_stmt->close();
+        
+        if (empty($error_message)) {
+            // Check if license plate already exists
+            $check_stmt = $conn->prepare("SELECT vehicle_id FROM Vehicle WHERE license_plate = ?");
+            $check_stmt->bind_param("s", $license_plate);
+            $check_stmt->execute();
+            $check_result = $check_stmt->get_result();
+
+            if ($check_result->num_rows > 0) {
+                $error_message = "This license plate is already registered.";
+            } else {
+                $stmt = $conn->prepare("INSERT INTO Vehicle (user_id, vehicle_type, vehicle_model, license_plate, grant_document) VALUES (?, ?, ?, ?, ?)");
+                $stmt->bind_param("issss", $user_id, $vehicle_type, $vehicle_model, $license_plate, $grant_document);
+
+                if ($stmt->execute()) {
+                    $success_message = "Vehicle registered successfully!";
+                } else {
+                    $error_message = "Failed to register vehicle. Please try again.";
+                }
+                $stmt->close();
+            }
+            $check_stmt->close();
+        }
     }
 }
 
@@ -75,30 +104,64 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['edit_vehicle'])) {
     $vehicle_type = trim($_POST['edit_vehicle_type']);
     $vehicle_model = trim($_POST['edit_vehicle_model']);
     $license_plate = trim($_POST['edit_license_plate']);
+    $new_grant_document = null;
 
     if (empty($vehicle_type) || empty($vehicle_model) || empty($license_plate)) {
         $error_message = "Please fill in all fields.";
     } else {
-        // Check if license plate already exists for another vehicle
-        $check_stmt = $conn->prepare("SELECT vehicle_id FROM Vehicle WHERE license_plate = ? AND vehicle_id != ?");
-        $check_stmt->bind_param("si", $license_plate, $vehicle_id);
-        $check_stmt->execute();
-        $check_result = $check_stmt->get_result();
-
-        if ($check_result->num_rows > 0) {
-            $error_message = "This license plate is already registered to another vehicle.";
-        } else {
-            $stmt = $conn->prepare("UPDATE Vehicle SET vehicle_type = ?, vehicle_model = ?, license_plate = ? WHERE vehicle_id = ? AND user_id = ?");
-            $stmt->bind_param("sssii", $vehicle_type, $vehicle_model, $license_plate, $vehicle_id, $user_id);
-
-            if ($stmt->execute() && $stmt->affected_rows >= 0) {
-                $success_message = "Vehicle updated successfully!";
-            } else {
-                $error_message = "Failed to update vehicle.";
+        // Handle file upload if a new file is provided
+        if (isset($_FILES['edit_vehicle_grant']) && $_FILES['edit_vehicle_grant']['error'] === UPLOAD_ERR_OK) {
+            $upload_dir = '../uploads/vehicle_grants/';
+            
+            if (!is_dir($upload_dir)) {
+                mkdir($upload_dir, 0777, true);
             }
-            $stmt->close();
+            
+            $file_extension = strtolower(pathinfo($_FILES['edit_vehicle_grant']['name'], PATHINFO_EXTENSION));
+            $allowed_extensions = ['pdf', 'jpg', 'jpeg', 'png', 'doc', 'docx'];
+            
+            if (!in_array($file_extension, $allowed_extensions)) {
+                $error_message = "Invalid file type. Allowed: PDF, JPG, PNG, DOC, DOCX";
+            } else {
+                $new_filename = 'grant_' . $user_id . '_' . time() . '.' . $file_extension;
+                $upload_path = $upload_dir . $new_filename;
+                
+                if (move_uploaded_file($_FILES['edit_vehicle_grant']['tmp_name'], $upload_path)) {
+                    $new_grant_document = 'uploads/vehicle_grants/' . $new_filename;
+                } else {
+                    $error_message = "Failed to upload file.";
+                }
+            }
         }
-        $check_stmt->close();
+        
+        if (empty($error_message)) {
+            // Check if license plate already exists for another vehicle
+            $check_stmt = $conn->prepare("SELECT vehicle_id FROM Vehicle WHERE license_plate = ? AND vehicle_id != ?");
+            $check_stmt->bind_param("si", $license_plate, $vehicle_id);
+            $check_stmt->execute();
+            $check_result = $check_stmt->get_result();
+
+            if ($check_result->num_rows > 0) {
+                $error_message = "This license plate is already registered to another vehicle.";
+            } else {
+                // Update with or without new grant document
+                if ($new_grant_document !== null) {
+                    $stmt = $conn->prepare("UPDATE Vehicle SET vehicle_type = ?, vehicle_model = ?, license_plate = ?, grant_document = ? WHERE vehicle_id = ? AND user_id = ?");
+                    $stmt->bind_param("ssssii", $vehicle_type, $vehicle_model, $license_plate, $new_grant_document, $vehicle_id, $user_id);
+                } else {
+                    $stmt = $conn->prepare("UPDATE Vehicle SET vehicle_type = ?, vehicle_model = ?, license_plate = ? WHERE vehicle_id = ? AND user_id = ?");
+                    $stmt->bind_param("sssii", $vehicle_type, $vehicle_model, $license_plate, $vehicle_id, $user_id);
+                }
+
+                if ($stmt->execute() && $stmt->affected_rows >= 0) {
+                    $success_message = "Vehicle updated successfully!";
+                } else {
+                    $error_message = "Failed to update vehicle.";
+                }
+                $stmt->close();
+            }
+            $check_stmt->close();
+        }
     }
 }
 
@@ -146,7 +209,7 @@ $stmt->close();
 
 // Fetch user's vehicles
 $vehicles = [];
-$stmt = $conn->prepare("SELECT vehicle_id, vehicle_type, vehicle_model, license_plate, created_at, approved_by, Approved_date, status, rejection_reason FROM Vehicle WHERE user_id = ? ORDER BY created_at DESC");
+$stmt = $conn->prepare("SELECT vehicle_id, vehicle_type, vehicle_model, license_plate, created_at, approved_by, Approved_date, status, rejection_reason, grant_document FROM Vehicle WHERE user_id = ? ORDER BY created_at DESC");
 $stmt->bind_param("i", $user_id);
 $stmt->execute();
 $result = $stmt->get_result();
@@ -322,7 +385,7 @@ closeDBConnection($conn);
             <!-- Add Vehicle Form -->
             <div class="form-section">
                 <h2>Register New Vehicle</h2>
-                <form method="POST" action="">
+                <form method="POST" action="" enctype="multipart/form-data">
                     <div class="form-row">
                         <div class="form-group">
                             <label for="vehicle_type">Vehicle Type</label>
@@ -343,6 +406,13 @@ closeDBConnection($conn);
                         <div class="form-group">
                             <label for="license_plate">License Plate</label>
                             <input type="text" id="license_plate" name="license_plate" placeholder="e.g. ABC1234" required>
+                        </div>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="vehicle_grant">Vehicle Grant (PDF, JPG, PNG, DOC)</label>
+                            <input type="file" id="vehicle_grant" name="vehicle_grant" accept=".pdf,.jpg,.jpeg,.png,.doc,.docx">
                         </div>
                     </div>
 
@@ -387,7 +457,7 @@ closeDBConnection($conn);
                                         <?php endif; ?>
                                     </td>
                                     <td>
-                                        <button type="button" class="btn btn-edit" onclick="openEditModal(<?php echo $vehicle['vehicle_id']; ?>, '<?php echo htmlspecialchars($vehicle['vehicle_type'], ENT_QUOTES); ?>', '<?php echo htmlspecialchars($vehicle['vehicle_model'], ENT_QUOTES); ?>', '<?php echo htmlspecialchars($vehicle['license_plate'], ENT_QUOTES); ?>')">Edit</button>
+                                        <button type="button" class="btn btn-edit" onclick="openEditModal(<?php echo $vehicle['vehicle_id']; ?>, '<?php echo htmlspecialchars($vehicle['vehicle_type'], ENT_QUOTES); ?>', '<?php echo htmlspecialchars($vehicle['vehicle_model'], ENT_QUOTES); ?>', '<?php echo htmlspecialchars($vehicle['license_plate'], ENT_QUOTES); ?>', '<?php echo htmlspecialchars($vehicle['grant_document'] ?? '', ENT_QUOTES); ?>')">Edit</button>
                                         <?php if ($vehicle['status'] === 'rejected' && !empty($vehicle['rejection_reason'])): ?>
                                             <button type="button" class="btn btn-reason" onclick="openReasonModal('<?php echo htmlspecialchars($vehicle['rejection_reason'], ENT_QUOTES); ?>')">Reason</button>
                                         <?php endif; ?>
@@ -423,7 +493,7 @@ closeDBConnection($conn);
         <div class="modal-content" style="background: white; padding: 30px; border-radius: 12px; max-width: 500px; width: 90%; position: relative;">
             <span class="close-modal" onclick="closeEditModal()" style="position: absolute; top: 15px; right: 20px; font-size: 24px; cursor: pointer; color: #666;">&times;</span>
             <h2 style="margin-bottom: 20px; color: #333;">Edit Vehicle</h2>
-            <form method="POST" action="">
+            <form method="POST" action="" enctype="multipart/form-data">
                 <input type="hidden" id="edit_vehicle_id" name="edit_vehicle_id">
                 
                 <div class="form-group" style="margin-bottom: 20px;">
@@ -446,6 +516,12 @@ closeDBConnection($conn);
                     <input type="text" id="edit_license_plate" name="edit_license_plate" required style="width: 100%; padding: 12px; border: 2px solid #e0e0e0; border-radius: 8px; font-size: 14px;">
                 </div>
 
+                <div class="form-group" style="margin-bottom: 20px;">
+                    <label for="edit_vehicle_grant" style="display: block; margin-bottom: 8px; font-weight: 500;">Vehicle Grant (PDF, JPG, PNG, DOC)</label>
+                    <input type="file" id="edit_vehicle_grant" name="edit_vehicle_grant" accept=".pdf,.jpg,.jpeg,.png,.doc,.docx" style="width: 100%; padding: 12px; border: 2px solid #e0e0e0; border-radius: 8px; font-size: 14px;">
+                    <p id="current_grant_info" style="margin-top: 8px; font-size: 12px; color: #666;"></p>
+                </div>
+
                 <div style="display: flex; gap: 10px; justify-content: flex-end;">
                     <button type="button" onclick="closeEditModal()" class="btn" style="background: #6c757d;">Cancel</button>
                     <button type="submit" name="edit_vehicle" class="btn">Save Changes</button>
@@ -455,11 +531,19 @@ closeDBConnection($conn);
     </div>
 
     <script>
-        function openEditModal(vehicleId, vehicleType, vehicleModel, licensePlate) {
+        function openEditModal(vehicleId, vehicleType, vehicleModel, licensePlate, grantDocument) {
             document.getElementById('edit_vehicle_id').value = vehicleId;
             document.getElementById('edit_vehicle_type').value = vehicleType;
             document.getElementById('edit_vehicle_model').value = vehicleModel;
             document.getElementById('edit_license_plate').value = licensePlate;
+            
+            var grantInfo = document.getElementById('current_grant_info');
+            if (grantDocument && grantDocument !== '') {
+                grantInfo.innerHTML = 'Current file: <a href="../' + grantDocument + '" target="_blank" style="color: #667eea;">View Document</a> (Upload new file to replace)';
+            } else {
+                grantInfo.textContent = 'No file uploaded yet';
+            }
+            
             document.getElementById('editVehicleModal').style.display = 'flex';
         }
 

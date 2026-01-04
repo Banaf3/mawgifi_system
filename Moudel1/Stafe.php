@@ -102,7 +102,7 @@ $stmt->close();
 // Fetch pending vehicles (only from students)
 $pending_vehicles = [];
 $stmt = $conn->prepare("
-    SELECT v.vehicle_id, v.vehicle_type, v.vehicle_model, v.license_plate, v.created_at, 
+    SELECT v.vehicle_id, v.vehicle_type, v.vehicle_model, v.license_plate, v.created_at, v.grant_document,
            u.UserName, u.Email, u.PhoneNumber
     FROM Vehicle v
     JOIN User u ON v.user_id = u.user_id
@@ -323,6 +323,11 @@ closeDBConnection($conn);
                                         <p><strong>Email:</strong> <?php echo htmlspecialchars($vehicle['Email']); ?></p>
                                         <?php if ($vehicle['PhoneNumber']): ?>
                                             <p><strong>Phone:</strong> <?php echo htmlspecialchars($vehicle['PhoneNumber']); ?></p>
+                                        <?php endif; ?>
+                                        <?php if (!empty($vehicle['grant_document'])): ?>
+                                            <p><strong>Vehicle Grant:</strong> <a href="../<?php echo htmlspecialchars($vehicle['grant_document']); ?>" target="_blank" style="color: #667eea; text-decoration: underline;">View Document</a></p>
+                                        <?php else: ?>
+                                            <p><strong>Vehicle Grant:</strong> <span style="color: #e53e3e;">Not uploaded</span></p>
                                         <?php endif; ?>
                                     </div>
                                     
