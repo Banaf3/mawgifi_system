@@ -1,4 +1,5 @@
 <?php
+
 /**
  * =============================================================================
  * PARKING BOOKING - PUBLIC USER INTERFACE
@@ -206,13 +207,13 @@ if ($conn) {  // Line 189: Only proceed if connection successful
     // QUERY 1: GET ALL PARKING AREAS FROM DATABASE
     // =========================================================================
     // First check if color and status columns exist (schema compatibility)
-    
+
     $columns_check = $conn->query("SHOW COLUMNS FROM ParkingArea LIKE 'area_color'");  // Line 195: Check for color column
     $has_color_column = $columns_check && $columns_check->num_rows > 0;  // Line 196: Store result
-    
+
     $columns_check = $conn->query("SHOW COLUMNS FROM ParkingArea LIKE 'area_status'");  // Line 198: Check for status column
     $has_status_column = $columns_check && $columns_check->num_rows > 0;  // Line 199: Store result
-    
+
     // Build SELECT query based on available columns
     $area_sql = "SELECT area_id, area_name";  // Line 202: Start building query
     if ($has_color_column) {
@@ -222,22 +223,22 @@ if ($conn) {  // Line 189: Only proceed if connection successful
         $area_sql .= ", area_status";  // Line 207: Add status if exists
     }
     $area_sql .= " FROM ParkingArea";  // Line 209: Complete query
-    
+
     $area_result = $conn->query($area_sql);  // Line 211: Execute query
     $db_areas = [];  // Line 212: Array to store database area records
-    
+
     if ($area_result) {  // Line 214: If query succeeded
         while ($area_row = $area_result->fetch_assoc()) {  // Line 215: Loop through results
             $db_areas[] = $area_row;  // Line 216: Add to array
             $area_name = trim($area_row['area_name']);  // Line 217: Get area name
-            
+
             // Extract area code from name format "Area A" or just "A"
             if (preg_match('/^Area\s*([A-E])$/i', $area_name, $matches)) {  // Line 220: Match "Area X" format
                 $area_code = strtoupper($matches[1]);  // Line 221: Extract letter
             } else {
                 $area_code = strtoupper($area_name);  // Line 223: Use name as code
             }
-            
+
             // Update parking_areas with database values
             if (isset($parking_areas[$area_code])) {  // Line 227: If valid area code
                 $parking_areas[$area_code]['exists'] = true;  // Line 228: Mark as existing
@@ -253,25 +254,25 @@ if ($conn) {  // Line 189: Only proceed if connection successful
     // QUERY 2: GET ALL PARKING SPACES WITH STATUS
     // =========================================================================
     // Join with ParkingArea to get area info for each space
-    
+
     $space_sql = "SELECT ps.space_number, ps.Space_id, ps.status, pa.area_name, pa.area_color, pa.area_status
                   FROM ParkingSpace ps 
                   JOIN ParkingArea pa ON ps.area_id = pa.area_id";  // Line 243-245: Join spaces with areas
-    
+
     $space_result = $conn->query($space_sql);  // Line 247: Execute query
     if ($space_result) {  // Line 248: If query succeeded
         while ($space_row = $space_result->fetch_assoc()) {  // Line 249: Loop through results
             // Parse space number - handles formats like "A-01", "1", "01"
             $space_num = $space_row['space_number'];  // Line 251: Get space number string
             $slot_number = null;  // Line 252: Initialize slot number
-            
+
             // Try to extract number from formats like "A-01", "B-15"
             if (preg_match('/[A-Z]-(\d+)/i', $space_num, $matches)) {  // Line 255: Match "X-NN" format
                 $slot_number = (int) $matches[1];  // Line 256: Extract numeric part
             } elseif (is_numeric($space_num)) {  // Line 257: If just a number
                 $slot_number = (int) $space_num;  // Line 258: Use directly
             }
-            
+
             // Store slot data if valid slot number (1-100)
             if ($slot_number !== null && $slot_number > 0 && $slot_number <= 100) {  // Line 262: Validate slot number range
                 $available_spaces[] = $slot_number;  // Line 263: Add to available spaces array
@@ -292,7 +293,7 @@ if ($conn) {  // Line 189: Only proceed if connection successful
     // QUERY 3: GET USER'S APPROVED VEHICLES
     // =========================================================================
     // Only fetch vehicles that have been approved by admin
-    
+
     $sql = "SELECT vehicle_id, vehicle_type, vehicle_model, license_plate 
             FROM Vehicle 
             WHERE user_id = ? AND status = 'approved'";  // Line 282-284: Select approved vehicles for user
@@ -779,9 +780,9 @@ $conn->close();  // Line 294: Close database connection
 
             <!-- Area Color Legend -->
             <div class="area-legend">
-                <?php 
+                <?php
                 // Only show areas that exist in the database
-                foreach ($parking_areas as $code => $area): 
+                foreach ($parking_areas as $code => $area):
                     if (!$area['exists']) continue; // Skip areas that don't exist
                 ?>
                     <div class="legend-item">
@@ -791,7 +792,9 @@ $conn->close();  // Line 294: Close database connection
                         </span>
                     </div>
                 <?php endforeach; ?>
-                <?php if (empty(array_filter($parking_areas, function($a) { return $a['exists']; }))): ?>
+                <?php if (empty(array_filter($parking_areas, function ($a) {
+                    return $a['exists'];
+                }))): ?>
                     <div class="legend-item" style="opacity: 0.7;">
                         <em style="color: #999;">No parking areas configured yet</em>
                     </div>
@@ -970,7 +973,7 @@ $conn->close();  // Line 294: Close database connection
             // -----------------------------------------------------------------
             // INJECT PHP DATA INTO JAVASCRIPT
             // -----------------------------------------------------------------
-            
+
             // Define parking areas with their slot ranges, colors, and existence status from database
             // This PHP array is converted to a JavaScript object
             const parkingAreas = <?php echo json_encode(array_map(function ($area) {
@@ -989,8 +992,8 @@ $conn->close();  // Line 294: Close database connection
             const slotAreaMapping = <?php echo json_encode($area_slot_mapping); ?>;
 
             // Debug logging for development
-            console.log('Slot 1 mapping:', slotAreaMapping[1]);  // Line: Debug slot 1 data
-            console.log('Full mapping:', slotAreaMapping);  // Line: Debug all slot mappings
+            console.log('Slot 1 mapping:', slotAreaMapping[1]); // Line: Debug slot 1 data
+            console.log('Full mapping:', slotAreaMapping); // Line: Debug all slot mappings
 
             // Array of available space numbers from database (spaces that exist)
             // Only these slot numbers are clickable
@@ -1008,33 +1011,33 @@ $conn->close();  // Line 294: Close database connection
              */
             function getAreaForSlot(slotNum) {
                 // First check: Do we have specific data from database for this slot?
-                if (slotAreaMapping[slotNum]) {  // Line: Check if slot exists in mapping
-                    const mapping = slotAreaMapping[slotNum];  // Line: Get mapping data
+                if (slotAreaMapping[slotNum]) { // Line: Check if slot exists in mapping
+                    const mapping = slotAreaMapping[slotNum]; // Line: Get mapping data
                     return {
-                        code: 'DB',                           // Line: Mark as from database
-                        color: mapping.area_color,            // Line: Use database color
-                        status: mapping.area_status,          // Line: Area status (available/closed)
-                        spaceStatus: mapping.status || 'available',  // Line: Individual space status
-                        name: mapping.area_name,              // Line: Area name
-                        exists: true                          // Line: Slot exists in database
+                        code: 'DB', // Line: Mark as from database
+                        color: mapping.area_color, // Line: Use database color
+                        status: mapping.area_status, // Line: Area status (available/closed)
+                        spaceStatus: mapping.status || 'available', // Line: Individual space status
+                        name: mapping.area_name, // Line: Area name
+                        exists: true // Line: Slot exists in database
                     };
                 }
-                
+
                 // Fallback: Use predefined area ranges
-                for (const [code, area] of Object.entries(parkingAreas)) {  // Line: Loop through areas
-                    if (slotNum >= area.start && slotNum <= area.end) {  // Line: Check if slot is in range
+                for (const [code, area] of Object.entries(parkingAreas)) { // Line: Loop through areas
+                    if (slotNum >= area.start && slotNum <= area.end) { // Line: Check if slot is in range
                         return {
-                            code: code,   // Line: Area code (A, B, C, D, E)
-                            ...area       // Line: Spread all area properties
+                            code: code, // Line: Area code (A, B, C, D, E)
+                            ...area // Line: Spread all area properties
                         };
                     }
                 }
-                
+
                 // Default: Return Area A if not found
                 return {
                     code: 'A',
                     ...parkingAreas['A'],
-                    exists: false  // Line: Mark as not in database
+                    exists: false // Line: Mark as not in database
                 };
             }
 
@@ -1049,103 +1052,103 @@ $conn->close();  // Line 294: Close database connection
              * @returns {boolean} - True if slot exists in database
              */
             function isSlotAvailable(slotNum) {
-                return availableSpaces.includes(slotNum);  // Line: Check if slot is in available array
+                return availableSpaces.includes(slotNum); // Line: Check if slot is in available array
             }
 
             // -----------------------------------------------------------------
             // INITIALIZE ALL PARKING SLOTS
             // -----------------------------------------------------------------
             // Get all SVG slot elements and set up their styling and click handlers
-            
-            const slots = document.querySelectorAll('.parking-slot');  // Line: Get all slot elements
-            let selectedSlot = null;  // Line: Track currently selected slot
+
+            const slots = document.querySelectorAll('.parking-slot'); // Line: Get all slot elements
+            let selectedSlot = null; // Line: Track currently selected slot
 
             // Loop through each slot element
             slots.forEach(slot => {
                 // Parse slot number from element ID (e.g., "slot-1" -> 1)
-                const slotId = slot.id;  // Line: Get element ID
-                const slotNum = parseInt(slotId.replace('slot-', ''));  // Line: Extract number
+                const slotId = slot.id; // Line: Get element ID
+                const slotNum = parseInt(slotId.replace('slot-', '')); // Line: Extract number
 
                 // Get area information for this slot
-                const areaInfo = getAreaForSlot(slotNum);  // Line: Get area data
+                const areaInfo = getAreaForSlot(slotNum); // Line: Get area data
 
                 // ---------------------------------------------------------
                 // CHECK 1: Is the area available in database?
                 // ---------------------------------------------------------
                 // If area doesn't exist in database, show as black (unavailable)
-                if (!areaInfo.exists) {  // Line: Check if area exists
-                    slot.classList.add('unavailable');  // Line: Add unavailable class
-                    slot.setAttribute('fill', '#1a1a1a');  // Line: Set fill to black
-                    slot.style.cursor = 'not-allowed';  // Line: Change cursor
-                    slot.style.pointerEvents = 'none';  // Line: Disable clicks
-                    return;  // Line: Skip further processing
+                if (!areaInfo.exists) { // Line: Check if area exists
+                    slot.classList.add('unavailable'); // Line: Add unavailable class
+                    slot.setAttribute('fill', '#1a1a1a'); // Line: Set fill to black
+                    slot.style.cursor = 'not-allowed'; // Line: Change cursor
+                    slot.style.pointerEvents = 'none'; // Line: Disable clicks
+                    return; // Line: Skip further processing
                 }
 
                 // ---------------------------------------------------------
                 // CHECK 2: Is the specific slot available in database?
                 // ---------------------------------------------------------
                 // If slot doesn't exist in database, show as dark gray
-                if (!isSlotAvailable(slotNum)) {  // Line: Check if slot exists
-                    slot.classList.add('unavailable');  // Line: Add unavailable class
-                    slot.setAttribute('fill', '#333333');  // Line: Set fill to dark gray
-                    slot.style.cursor = 'not-allowed';  // Line: Change cursor
-                    slot.style.pointerEvents = 'none';  // Line: Disable clicks
-                    return;  // Line: Skip further processing
+                if (!isSlotAvailable(slotNum)) { // Line: Check if slot exists
+                    slot.classList.add('unavailable'); // Line: Add unavailable class
+                    slot.setAttribute('fill', '#333333'); // Line: Set fill to dark gray
+                    slot.style.cursor = 'not-allowed'; // Line: Change cursor
+                    slot.style.pointerEvents = 'none'; // Line: Disable clicks
+                    return; // Line: Skip further processing
                 }
 
                 // ---------------------------------------------------------
                 // CHECK 3: Is the area open/available?
                 // ---------------------------------------------------------
                 // Check area status - if occupied, temporarily closed, or under maintenance, show as red
-                if (areaInfo.status && ['occupied', 'temporarily_closed', 'under_maintenance'].includes(areaInfo.status)) {  // Line: Check area status
-                    slot.classList.add('area-closed');  // Line: Add closed class
-                    slot.setAttribute('fill', '#f56565');  // Line: Set fill to red
-                    slot.style.cursor = 'not-allowed';  // Line: Change cursor
-                    slot.style.pointerEvents = 'none';  // Line: Disable clicks
-                    return;  // Line: Skip further processing
+                if (areaInfo.status && ['occupied', 'temporarily_closed', 'under_maintenance'].includes(areaInfo.status)) { // Line: Check area status
+                    slot.classList.add('area-closed'); // Line: Add closed class
+                    slot.setAttribute('fill', '#f56565'); // Line: Set fill to red
+                    slot.style.cursor = 'not-allowed'; // Line: Change cursor
+                    slot.style.pointerEvents = 'none'; // Line: Disable clicks
+                    return; // Line: Skip further processing
                 }
 
                 // ---------------------------------------------------------
                 // CHECK 4: Is the individual space available?
                 // ---------------------------------------------------------
                 // Check individual space status
-                console.log('Slot', slotNum, 'spaceStatus:', areaInfo.spaceStatus);  // Line: Debug log
-                
+                console.log('Slot', slotNum, 'spaceStatus:', areaInfo.spaceStatus); // Line: Debug log
+
                 // If space status is NOT available, show as RED
-                if (areaInfo.spaceStatus && areaInfo.spaceStatus !== 'available') {  // Line: Check space status
-                    console.log('Marking slot', slotNum, 'as RED due to status:', areaInfo.spaceStatus);  // Line: Debug log
-                    slot.classList.add('space-unavailable');  // Line: Add unavailable class
-                    slot.setAttribute('fill', '#f56565');  // Line: Set fill to red
-                    slot.style.cursor = 'not-allowed';  // Line: Change cursor
-                    slot.style.pointerEvents = 'none';  // Line: Disable clicks
-                    return;  // Line: Skip further processing
+                if (areaInfo.spaceStatus && areaInfo.spaceStatus !== 'available') { // Line: Check space status
+                    console.log('Marking slot', slotNum, 'as RED due to status:', areaInfo.spaceStatus); // Line: Debug log
+                    slot.classList.add('space-unavailable'); // Line: Add unavailable class
+                    slot.setAttribute('fill', '#f56565'); // Line: Set fill to red
+                    slot.style.cursor = 'not-allowed'; // Line: Change cursor
+                    slot.style.pointerEvents = 'none'; // Line: Disable clicks
+                    return; // Line: Skip further processing
                 }
 
                 // ---------------------------------------------------------
                 // SLOT IS AVAILABLE - Set color and enable clicking
                 // ---------------------------------------------------------
-                slot.setAttribute('fill', areaInfo.color);  // Line: Set fill to area color
+                slot.setAttribute('fill', areaInfo.color); // Line: Set fill to area color
 
                 // Add click event listener for available slots
-                slot.addEventListener('click', function() {  // Line: Add click handler
-                    selectSlot(this);  // Line: Call selection function
+                slot.addEventListener('click', function() { // Line: Add click handler
+                    selectSlot(this); // Line: Call selection function
                 });
             });
 
             // Set default date to today
-            document.getElementById('bookingDate').value = new Date().toISOString().split('T')[0];  // Line: Set date input to today
+            document.getElementById('bookingDate').value = new Date().toISOString().split('T')[0]; // Line: Set date input to today
 
             // Load initial slot availability based on default date/time
-            loadSlots();  // Line: Fetch booking data
+            loadSlots(); // Line: Fetch booking data
         });
 
         // =====================================================================
         // GLOBAL VARIABLES
         // =====================================================================
-        
-        let selectedSlot = null;  // Line: Currently selected slot number
-        const slots = document.querySelectorAll('.parking-slot');  // Line: All slot elements
-        const isStudent = <?= $is_student ? 'true' : 'false' ?>;  // Line: Boolean from PHP
+
+        let selectedSlot = null; // Line: Currently selected slot number
+        const slots = document.querySelectorAll('.parking-slot'); // Line: All slot elements
+        const isStudent = <?= $is_student ? 'true' : 'false' ?>; // Line: Boolean from PHP
 
         // =====================================================================
         // FUNCTION: getTime(hourId, ampmId)
@@ -1158,11 +1161,11 @@ $conn->close();  // Line 294: Close database connection
          * @returns {string} - Time in "HH:00" format
          */
         function getTime(hourId, ampmId) {
-            let h = parseInt(document.getElementById(hourId).value);  // Line: Get hour value
-            const ap = document.getElementById(ampmId).value;  // Line: Get AM/PM value
-            if (ap === 'PM' && h < 12) h += 12;  // Line: Convert PM to 24-hour
-            if (ap === 'AM' && h === 12) h = 0;  // Line: Handle midnight
-            return h.toString().padStart(2, '0') + ':00';  // Line: Format as HH:00
+            let h = parseInt(document.getElementById(hourId).value); // Line: Get hour value
+            const ap = document.getElementById(ampmId).value; // Line: Get AM/PM value
+            if (ap === 'PM' && h < 12) h += 12; // Line: Convert PM to 24-hour
+            if (ap === 'AM' && h === 12) h = 0; // Line: Handle midnight
+            return h.toString().padStart(2, '0') + ':00'; // Line: Format as HH:00
         }
 
         // =====================================================================
@@ -1179,40 +1182,40 @@ $conn->close();  // Line 294: Close database connection
          * 4. Mark booked slots in the SVG
          */
         function loadSlots() {
-            const date = document.getElementById('bookingDate').value;  // Line: Get selected date
-            const start = getTime('startHour', 'startAmPm');  // Line: Get start time
-            const end = getTime('endHour', 'endAmPm');  // Line: Get end time
+            const date = document.getElementById('bookingDate').value; // Line: Get selected date
+            const start = getTime('startHour', 'startAmPm'); // Line: Get start time
+            const end = getTime('endHour', 'endAmPm'); // Line: Get end time
 
-            if (!date) {  // Line: Validate date
-                alert('Select a date');  // Line: Show alert
-                return;  // Line: Exit function
+            if (!date) { // Line: Validate date
+                alert('Select a date'); // Line: Show alert
+                return; // Line: Exit function
             }
 
             // Reset slot classes (preserve area-closed and unavailable states)
-            slots.forEach(s => {  // Line: Loop through all slots
+            slots.forEach(s => { // Line: Loop through all slots
                 // Only remove booked/selected classes, preserve area-closed, space-unavailable, unavailable
-                if (!s.classList.contains('area-closed') && 
-                    !s.classList.contains('space-unavailable') && 
-                    !s.classList.contains('unavailable')) {  // Line: Check if slot is not permanently unavailable
-                    s.classList.remove('booked', 'selected');  // Line: Remove temporary classes
+                if (!s.classList.contains('area-closed') &&
+                    !s.classList.contains('space-unavailable') &&
+                    !s.classList.contains('unavailable')) { // Line: Check if slot is not permanently unavailable
+                    s.classList.remove('booked', 'selected'); // Line: Remove temporary classes
                 }
             });
 
-            clearSelection();  // Line: Clear any current selection
+            clearSelection(); // Line: Clear any current selection
 
             // Fetch booked slots from API
-            fetch(`../booking/api/get_slots.php?date=${date}&start=${start}&end=${end}`)  // Line: API call
-                .then(r => r.json())  // Line: Parse JSON
+            fetch(`../booking/api/get_slots.php?date=${date}&start=${start}&end=${end}`) // Line: API call
+                .then(r => r.json()) // Line: Parse JSON
                 .then(data => {
                     // Mark each booked slot
-                    (data.booked || []).forEach(id => {  // Line: Loop through booked IDs
-                        const el = document.getElementById('slot-' + id);  // Line: Get slot element
+                    (data.booked || []).forEach(id => { // Line: Loop through booked IDs
+                        const el = document.getElementById('slot-' + id); // Line: Get slot element
                         // Only mark as booked if not already permanently unavailable
-                        if (el && !el.classList.contains('area-closed') && 
-                            !el.classList.contains('space-unavailable') && 
-                            !el.classList.contains('unavailable')) {  // Line: Check slot state
-                            el.classList.add('booked');  // Line: Add booked class
-                            el.setAttribute('fill', '#f56565');  // Line: Set fill to red
+                        if (el && !el.classList.contains('area-closed') &&
+                            !el.classList.contains('space-unavailable') &&
+                            !el.classList.contains('unavailable')) { // Line: Check slot state
+                            el.classList.add('booked'); // Line: Add booked class
+                            el.setAttribute('fill', '#f56565'); // Line: Set fill to red
                         }
                     });
                 });
@@ -1229,8 +1232,8 @@ $conn->close();  // Line 294: Close database connection
          */
         function selectSlot(el) {
             // Students can't select booked slots, but admin/staff can
-            if (isStudent && el.classList.contains('booked')) return;  // Line: Block students from booked
-            if (el.classList.contains('unavailable')) return;  // Line: Block unavailable slots
+            if (isStudent && el.classList.contains('booked')) return; // Line: Block students from booked
+            if (el.classList.contains('unavailable')) return; // Line: Block unavailable slots
             if (el.classList.contains('area-closed')) return;
             if (el.classList.contains('space-unavailable')) return;
 
