@@ -1,62 +1,206 @@
 <?php
 /**
- * Parking Management - Admin Module
- * This page allows admins to manage Parking Areas and Parking Spaces
- * CRUD operations: Create, Read, Update, Delete
+ * =============================================================================
+ * PARKING MANAGEMENT - ADMIN MODULE
+ * =============================================================================
+ * 
+ * FILE: Module2/admin/parking_management.php
+ * PURPOSE: Admin interface for managing Parking Areas and Parking Spaces
+ * AUTHOR: Mawgifi System Team
+ * 
+ * =============================================================================
+ * DESCRIPTION
+ * =============================================================================
+ * This file provides a complete admin dashboard for managing the parking system.
+ * It allows administrators to:
+ * - View all parking areas and their space counts
+ * - Create, edit, and delete parking areas
+ * - View all parking spaces with their status and area association
+ * - Create, edit, and delete individual parking spaces
+ * - Bulk create multiple parking spaces at once
+ * 
+ * =============================================================================
+ * FILE STRUCTURE (1247 lines)
+ * =============================================================================
+ * 
+ * SECTION 1: PHP BACKEND (Lines 1-60)
+ * - Session authentication
+ * - Database queries for areas, spaces, and availability
+ * 
+ * SECTION 2: HTML HEAD & CSS (Lines 62-850)
+ * - Complete CSS styling for admin dashboard
+ * - Navigation bar styles
+ * - Tab component styles
+ * - Card and table styles
+ * - Modal dialog styles
+ * - Form element styles
+ * - Button and badge styles
+ * - Toast notification styles
+ * - Responsive design breakpoints
+ * 
+ * SECTION 3: HTML BODY (Lines 851-875)
+ * - Navigation bar with user info
+ * - Tab buttons (Areas / Spaces)
+ * - Areas tab content with table and add button
+ * - Spaces tab content with table and add buttons
+ * 
+ * SECTION 4: MODAL DIALOGS (Lines 740-870)
+ * - Area modal (create/edit form)
+ * - Space modal (create/edit form)
+ * - Bulk space modal (create multiple spaces)
+ * 
+ * SECTION 5: JAVASCRIPT (Lines 876-1247)
+ * - showToast(): Display notification messages
+ * - openAreaModal() / closeAreaModal(): Area form modal control
+ * - editArea(): Populate form for editing
+ * - submitAreaForm(): AJAX submit to parking_api.php
+ * - deleteArea(): Confirm and delete via AJAX
+ * - openSpaceModal() / closeSpaceModal(): Space form modal control
+ * - editSpace(): Populate form for editing
+ * - submitSpaceForm(): AJAX submit for space
+ * - deleteSpace(): Confirm and delete space
+ * - openBulkSpaceModal() / closeBulkSpaceModal(): Bulk form control
+ * - updateBulkPreview(): Live preview of spaces to be created
+ * - submitBulkSpaceForm(): Create multiple spaces
+ * - updateTotalSpaceCount(): Update UI counters
+ * - validateSpaceCount(): Check against 100 space limit
+ * 
+ * =============================================================================
+ * DATA FLOW
+ * =============================================================================
+ * 
+ * 1. PAGE LOAD:
+ *    parking_management.php -> database.php -> MySQL
+ *         |                                      |
+ *         |<--------- Areas, Spaces, Availability
+ *         |
+ *         v
+ *    Render HTML tables with PHP foreach loops
+ * 
+ * 2. CRUD OPERATIONS:
+ *    User Action (click button)
+ *         |
+ *         v
+ *    JavaScript function (e.g., submitAreaForm)
+ *         |
+ *         v
+ *    Fetch API -> parking_api.php
+ *         |
+ *         v
+ *    JSON Response
+ *         |
+ *         v
+ *    showToast() + page reload
+ * 
+ * =============================================================================
+ * DEPENDENCIES
+ * =============================================================================
+ * - config/database.php: Database connection (getDBConnection())
+ * - config/session.php: Session management (requireAdmin())
+ * - admin/check_event_status.php: Auto-update area status based on events
+ * - api/parking_api.php: REST API for all CRUD operations
+ * 
+ * =============================================================================
+ * DATABASE TABLES USED
+ * =============================================================================
+ * - ParkingArea: area_id, area_name, area_type, AreaSize, area_color, area_status
+ * - ParkingSpace: Space_id, area_id, space_number, qr_code, status
+ * - Availability: Availability_id, date, time_range (for scheduling)
+ * 
+ * =============================================================================
+ * SECURITY
+ * =============================================================================
+ * - requireAdmin(): Redirects non-admin users to login
+ * - All database queries use MySQLi prepared statements (in parking_api.php)
+ * - CSRF protection should be added for production
+ * 
+ * =============================================================================
  */
 
+// Line 116: Include database connection helper
 require_once '../../config/database.php';
+// Line 117: Include session management and authentication
 require_once '../../config/session.php';
+// Line 118: Include event status checker (auto-updates area status)
 require_once 'check_event_status.php';
 
-// Require admin access
+// -----------------------------------------------------------------------------
+// AUTHENTICATION CHECK
+// -----------------------------------------------------------------------------
+// Line 124: Verify user is logged in as admin, redirect to login if not
 requireAdmin();
 
+// Line 127: Get username from session for display, default to 'Administrator'
 $username = $_SESSION['username'] ?? 'Administrator';
+// Line 128: Establish database connection
 $conn = getDBConnection();
 
-// Fetch all parking areas with space count
-$areas = [];
-if ($conn) {
+// -----------------------------------------------------------------------------
+// FETCH PARKING AREAS WITH SPACE COUNTS
+// -----------------------------------------------------------------------------
+// Query all areas and count how many spaces each area has using a subquery
+
+$areas = [];  // Line 135: Initialize empty array for areas
+if ($conn) {  // Line 136: Only proceed if connection successful
+    // Line 137-140: SQL query to get all areas with space count
+    // Uses correlated subquery to count spaces for each area
+    // SELECT pa.* - Select all area columns
+    // (SELECT COUNT(*) ...) as space_count - Count spaces per area
+    // FROM ParkingArea pa - From ParkingArea table
+    // ORDER BY pa.area_name - Sort alphabetically
     $sql = "SELECT pa.*, 
             (SELECT COUNT(*) FROM ParkingSpace ps WHERE ps.area_id = pa.area_id) as space_count
             FROM ParkingArea pa 
             ORDER BY pa.area_name";
-    $result = $conn->query($sql);
-    if ($result) {
-        while ($row = $result->fetch_assoc()) {
-            $areas[] = $row;
+    $result = $conn->query($sql);  // Line 142: Execute query
+    if ($result) {  // Line 143: If query succeeded
+        while ($row = $result->fetch_assoc()) {  // Line 144: Loop through results
+            $areas[] = $row;  // Line 145: Add each area to array
         }
     }
 }
 
-// Fetch all parking spaces with area info
-$spaces = [];
-if ($conn) {
+// -----------------------------------------------------------------------------
+// FETCH PARKING SPACES WITH AREA INFORMATION
+// -----------------------------------------------------------------------------
+// Query all spaces and JOIN with areas to get the area name for display
+
+$spaces = [];  // Line 154: Initialize empty array for spaces
+if ($conn) {  // Line 155: Only proceed if connection successful
+    // Line 156-159: SQL query to get spaces with their area names
+    // SELECT ps.*, pa.area_name - Select space columns and area name
+    // FROM ParkingSpace ps - From ParkingSpace table
+    // LEFT JOIN ParkingArea pa - Join to get area info
+    // ORDER BY pa.area_name, ps.space_number - Sort by area, then space number
     $sql = "SELECT ps.*, pa.area_name 
             FROM ParkingSpace ps 
             LEFT JOIN ParkingArea pa ON ps.area_id = pa.area_id 
             ORDER BY pa.area_name, ps.space_number";
-    $result = $conn->query($sql);
-    if ($result) {
-        while ($row = $result->fetch_assoc()) {
-            $spaces[] = $row;
+    $result = $conn->query($sql);  // Line 161: Execute query
+    if ($result) {  // Line 162: If query succeeded
+        while ($row = $result->fetch_assoc()) {  // Line 163: Loop through results
+            $spaces[] = $row;  // Line 164: Add each space to array
         }
     }
 }
 
-// Fetch availability options
-$availabilities = [];
-if ($conn) {
-    $sql = "SELECT * FROM Availability ORDER BY date DESC";
-    $result = $conn->query($sql);
-    if ($result) {
-        while ($row = $result->fetch_assoc()) {
-            $availabilities[] = $row;
+// -----------------------------------------------------------------------------
+// FETCH AVAILABILITY OPTIONS
+// -----------------------------------------------------------------------------
+// Query availability records for dropdown selection in area form
+
+$availabilities = [];  // Line 173: Initialize empty array for availabilities
+if ($conn) {  // Line 174: Only proceed if connection successful
+    $sql = "SELECT * FROM Availability ORDER BY date DESC";  // Line 175: Get all, newest first
+    $result = $conn->query($sql);  // Line 176: Execute query
+    if ($result) {  // Line 177: If query succeeded
+        while ($row = $result->fetch_assoc()) {  // Line 178: Loop through results
+            $availabilities[] = $row;  // Line 179: Add each availability to array
         }
     }
 }
 
+// Line 183: Close database connection to free resources
 $conn->close();
 ?>
 
@@ -862,385 +1006,589 @@ $conn->close();
     <div class="toast" id="toast"></div>
 
     <script>
+        // =====================================================================
+        // JAVASCRIPT SECTION - PARKING MANAGEMENT ADMIN
+        // =====================================================================
+        // 
+        // This section contains all client-side JavaScript for the parking
+        // management admin interface. Functions are organized into:
+        // 1. Utility Functions (toast notifications)
+        // 2. Tab Navigation
+        // 3. Area Management (CRUD)
+        // 4. Space Management (CRUD)
+        // 5. Bulk Space Creation
+        // 6. Validation and Statistics
+        // 
+        // All API calls use fetch() to communicate with parking_api.php
+        // =====================================================================
+
         // Debug - verify script is loading
-        console.log('Parking Management JS Loaded');
+        console.log('Parking Management JS Loaded');  // Line: Confirm JS file loaded in console
 
-        // Tab switching
-        document.querySelectorAll('.tab-btn').forEach(btn => {
-            btn.addEventListener('click', () => {
-                console.log('Tab clicked:', btn.dataset.tab);
-                document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-                document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+        // =====================================================================
+        // TAB NAVIGATION
+        // =====================================================================
+        // Handles switching between "Parking Areas" and "Parking Spaces" tabs
+        // Uses data-tab attribute on buttons to identify which tab to show
 
-                btn.classList.add('active');
-                document.getElementById(btn.dataset.tab + '-tab').classList.add('active');
+        document.querySelectorAll('.tab-btn').forEach(btn => {  // Line: Loop through all tab buttons
+            btn.addEventListener('click', () => {  // Line: Add click handler to each
+                console.log('Tab clicked:', btn.dataset.tab);  // Line: Debug log which tab was clicked
+                // Remove active class from all tabs and content
+                document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));  // Line: Deactivate all tab buttons
+                document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));  // Line: Hide all tab content
+
+                // Add active class to clicked tab and its content
+                btn.classList.add('active');  // Line: Activate clicked button
+                document.getElementById(btn.dataset.tab + '-tab').classList.add('active');  // Line: Show corresponding content
             });
         });
 
-        // Toast notification
+        // =====================================================================
+        // UTILITY FUNCTION: showToast()
+        // =====================================================================
+        /**
+         * Display a toast notification message to the user
+         * 
+         * @param {string} message - The message to display
+         * @param {string} type - 'success' (green) or 'error' (red)
+         * 
+         * The toast appears at the bottom-right and auto-hides after 3 seconds
+         */
         function showToast(message, type = 'success') {
-            const toast = document.getElementById('toast');
-            toast.textContent = message;
-            toast.className = 'toast ' + type + ' show';
-            setTimeout(() => toast.classList.remove('show'), 3000);
+            const toast = document.getElementById('toast');  // Line: Get toast element
+            toast.textContent = message;  // Line: Set message text
+            toast.className = 'toast ' + type + ' show';  // Line: Add type class and show class
+            setTimeout(() => toast.classList.remove('show'), 3000);  // Line: Auto-hide after 3 seconds
         }
 
-        // ========== AREA FUNCTIONS ==========
+        // =====================================================================
+        // AREA MANAGEMENT FUNCTIONS
+        // =====================================================================
+        // Functions for Create, Read, Update, Delete operations on parking areas
 
+        /**
+         * Open the area modal for creating a new area
+         * Resets the form and clears the area_id (indicates new record)
+         */
         function openAreaModal() {
-            console.log('Opening area modal');
-            document.getElementById('areaModalTitle').textContent = 'Add New Parking Area';
-            document.getElementById('areaForm').reset();
-            document.getElementById('area_id').value = '';
-            document.getElementById('areaModal').classList.add('show');
+            console.log('Opening area modal');  // Line: Debug log
+            document.getElementById('areaModalTitle').textContent = 'Add New Parking Area';  // Line: Set modal title
+            document.getElementById('areaForm').reset();  // Line: Clear all form fields
+            document.getElementById('area_id').value = '';  // Line: Clear hidden area_id (new mode)
+            document.getElementById('areaModal').classList.add('show');  // Line: Display modal
         }
 
+        /**
+         * Close the area modal dialog
+         */
         function closeAreaModal() {
-            document.getElementById('areaModal').classList.remove('show');
+            document.getElementById('areaModal').classList.remove('show');  // Line: Hide modal
         }
 
+        /**
+         * Open the area modal pre-filled for editing an existing area
+         * 
+         * @param {Object} area - Area object with properties:
+         *   - area_id: Database ID
+         *   - area_name: Display name
+         *   - area_type: Type category
+         *   - AreaSize: Numeric size
+         *   - area_color: Hex color code
+         *   - area_status: Status string
+         */
         function editArea(area) {
-            console.log('Editing area:', area);
-            document.getElementById('areaModalTitle').textContent = 'Edit Parking Area';
-            document.getElementById('area_id').value = area.area_id;
-            document.getElementById('area_name').value = area.area_name;
-            document.getElementById('area_type').value = area.area_type || 'Standard';
-            document.getElementById('area_size').value = area.AreaSize || '';
-            document.getElementById('area_color').value = area.area_color || '#a0a0a0';
-            document.getElementById('area_status').value = area.area_status || 'available';
-            document.getElementById('areaModal').classList.add('show');
+            console.log('Editing area:', area);  // Line: Debug log area object
+            document.getElementById('areaModalTitle').textContent = 'Edit Parking Area';  // Line: Set modal title for edit
+            document.getElementById('area_id').value = area.area_id;  // Line: Set hidden ID (edit mode)
+            document.getElementById('area_name').value = area.area_name;  // Line: Pre-fill area name
+            document.getElementById('area_type').value = area.area_type || 'Standard';  // Line: Pre-fill type with default
+            document.getElementById('area_size').value = area.AreaSize || '';  // Line: Pre-fill size
+            document.getElementById('area_color').value = area.area_color || '#a0a0a0';  // Line: Pre-fill color with default gray
+            document.getElementById('area_status').value = area.area_status || 'available';  // Line: Pre-fill status
+            document.getElementById('areaModal').classList.add('show');  // Line: Display modal
         }
 
+        /**
+         * Handle area form submission (create or update)
+         * 
+         * FLOW:
+         * 1. Prevent default form submit
+         * 2. Build FormData from form fields
+         * 3. Determine action (create or update) based on area_id presence
+         * 4. Send POST request to parking_api.php
+         * 5. Parse JSON response
+         * 6. Show toast and reload page on success
+         * 
+         * @param {Event} e - Form submit event
+         */
         async function submitAreaForm(e) {
-            e.preventDefault();
-            console.log('Submitting area form');
-            const formData = new FormData(document.getElementById('areaForm'));
-            const areaId = formData.get('area_id');
+            e.preventDefault();  // Line: Stop form from traditional submit
+            console.log('Submitting area form');  // Line: Debug log
+            const formData = new FormData(document.getElementById('areaForm'));  // Line: Collect all form fields
+            const areaId = formData.get('area_id');  // Line: Check if area_id exists
 
+            // Line: Append action based on whether this is create or update
             formData.append('action', areaId ? 'update' : 'create');
 
             try {
+                // Line: Send POST request to API
                 const response = await fetch('../api/parking_api.php?type=area', {
-                    method: 'POST',
-                    body: formData
+                    method: 'POST',  // Line: HTTP method
+                    body: formData  // Line: Form data as body
                 });
-                console.log('Response status:', response.status);
-                const text = await response.text();
-                console.log('Response text:', text);
+                console.log('Response status:', response.status);  // Line: Debug response status
+                const text = await response.text();  // Line: Get raw response text
+                console.log('Response text:', text);  // Line: Debug response body
 
-                let data;
+                let data;  // Line: Variable for parsed JSON
                 try {
-                    data = JSON.parse(text);
+                    data = JSON.parse(text);  // Line: Parse JSON response
                 } catch (parseError) {
-                    console.error('JSON parse error:', parseError);
-                    showToast('Server error: Invalid response', 'error');
-                    return;
+                    console.error('JSON parse error:', parseError);  // Line: Log parse errors
+                    showToast('Server error: Invalid response', 'error');  // Line: Show error to user
+                    return;  // Line: Exit function
                 }
 
+                // Line: Handle success or error from API
                 if (data.success) {
-                    showToast(data.message, 'success');
-                    closeAreaModal();
-                    setTimeout(() => location.reload(), 1000);
+                    showToast(data.message, 'success');  // Line: Show success message
+                    closeAreaModal();  // Line: Close the modal
+                    setTimeout(() => location.reload(), 1000);  // Line: Reload page after 1 second
                 } else {
-                    showToast(data.message, 'error');
+                    showToast(data.message, 'error');  // Line: Show error message
                 }
             } catch (error) {
-                console.error('Fetch error:', error);
-                showToast('An error occurred: ' + error.message, 'error');
+                console.error('Fetch error:', error);  // Line: Log network errors
+                showToast('An error occurred: ' + error.message, 'error');  // Line: Show error to user
             }
         }
 
+        /**
+         * Delete a parking area after confirmation
+         * 
+         * WARNING: This will cascade delete all parking spaces in the area
+         * 
+         * @param {number} areaId - Database ID of area to delete
+         * @param {string} areaName - Name for confirmation dialog
+         */
         async function deleteArea(areaId, areaName) {
+            // Line: Show confirmation dialog with warning about cascade delete
             if (!confirm(`Are you sure you want to delete "${areaName}"? This will also delete all parking spaces in this area.`)) {
-                return;
+                return;  // Line: User cancelled, exit function
             }
 
             try {
+                // Line: Send POST request to delete endpoint
                 const response = await fetch('../api/parking_api.php?type=area', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-                    body: `action=delete&area_id=${areaId}`
+                    method: 'POST',  // Line: HTTP method
+                    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },  // Line: Form content type
+                    body: `action=delete&area_id=${areaId}`  // Line: URL-encoded body
                 });
-                console.log('Delete area response status:', response.status);
-                const text = await response.text();
-                console.log('Delete area response:', text);
+                console.log('Delete area response status:', response.status);  // Line: Debug log
+                const text = await response.text();  // Line: Get raw response text
+                console.log('Delete area response:', text);  // Line: Debug log response
 
-                let data;
+                let data;  // Line: Variable for parsed JSON
                 try {
-                    data = JSON.parse(text);
+                    data = JSON.parse(text);  // Line: Parse JSON response
                 } catch (parseError) {
-                    console.error('JSON parse error:', parseError);
-                    showToast('Server error: Invalid response', 'error');
-                    return;
+                    console.error('JSON parse error:', parseError);  // Line: Log parse errors
+                    showToast('Server error: Invalid response', 'error');  // Line: Show error to user
+                    return;  // Line: Exit function
                 }
 
+                // Line: Handle success or error from API
                 if (data.success) {
-                    showToast(data.message, 'success');
-                    setTimeout(() => location.reload(), 1000);
+                    showToast(data.message, 'success');  // Line: Show success message
+                    setTimeout(() => location.reload(), 1000);  // Line: Reload page after 1 second
                 } else {
-                    showToast(data.message, 'error');
+                    showToast(data.message, 'error');  // Line: Show error message
                 }
             } catch (error) {
-                console.error('Fetch error:', error);
-                showToast('An error occurred: ' + error.message, 'error');
+                console.error('Fetch error:', error);  // Line: Log network errors
+                showToast('An error occurred: ' + error.message, 'error');  // Line: Show error to user
             }
         }
-        // ========== SPACE FUNCTIONS ==========
 
+        // =====================================================================
+        // SPACE MANAGEMENT FUNCTIONS
+        // =====================================================================
+        // Functions for Create, Read, Update, Delete operations on parking spaces
+
+        /**
+         * Open the space modal for creating a new parking space
+         * Resets the form and clears the space_id (indicates new record)
+         */
         function openSpaceModal() {
-            console.log('Opening space modal');
-            document.getElementById('spaceModalTitle').textContent = 'Add New Parking Space';
-            document.getElementById('spaceForm').reset();
-            document.getElementById('space_id').value = '';
-            document.getElementById('spaceModal').classList.add('show');
+            console.log('Opening space modal');  // Line: Debug log
+            document.getElementById('spaceModalTitle').textContent = 'Add New Parking Space';  // Line: Set modal title
+            document.getElementById('spaceForm').reset();  // Line: Clear all form fields
+            document.getElementById('space_id').value = '';  // Line: Clear hidden space_id (new mode)
+            document.getElementById('spaceModal').classList.add('show');  // Line: Display modal
         }
 
+        /**
+         * Close the space modal dialog
+         */
         function closeSpaceModal() {
-            document.getElementById('spaceModal').classList.remove('show');
+            document.getElementById('spaceModal').classList.remove('show');  // Line: Hide modal
         }
 
+        /**
+         * Open the space modal pre-filled for editing an existing space
+         * Also generates and displays a QR code preview for the space
+         * 
+         * @param {Object} space - Space object with properties:
+         *   - Space_id: Database ID
+         *   - area_id: Parent area ID
+         *   - space_number: Display number (e.g., "A-01")
+         *   - qr_code: QR code string
+         *   - status: Current status
+         */
         function editSpace(space) {
-            console.log('Editing space:', space);
-            document.getElementById('spaceModalTitle').textContent = 'Edit Parking Space';
-            document.getElementById('space_id').value = space.Space_id;
-            document.getElementById('space_area_id').value = space.area_id;
-            document.getElementById('space_number').value = space.space_number;
-            document.getElementById('qr_code').value = space.qr_code || '';
-            document.getElementById('status').value = space.status || 'available';
-            console.log('Setting status to:', space.status || 'available');
+            console.log('Editing space:', space);  // Line: Debug log space object
+            document.getElementById('spaceModalTitle').textContent = 'Edit Parking Space';  // Line: Set modal title for edit
+            document.getElementById('space_id').value = space.Space_id;  // Line: Set hidden ID (edit mode)
+            document.getElementById('space_area_id').value = space.area_id;  // Line: Pre-fill area dropdown
+            document.getElementById('space_number').value = space.space_number;  // Line: Pre-fill space number
+            document.getElementById('qr_code').value = space.qr_code || '';  // Line: Pre-fill QR code
+            document.getElementById('status').value = space.status || 'available';  // Line: Pre-fill status
+            console.log('Setting status to:', space.status || 'available');  // Line: Debug log status
             
-            // Generate and show QR code preview
-            const baseUrl = window.location.origin + '/mawgifi_system';
-            const qrData = encodeURIComponent(baseUrl + '/modules/booking/scan.php?slot=' + space.space_number);
-            const qrCodeUrl = 'https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=' + qrData;
-            document.getElementById('qr_preview_image').src = qrCodeUrl;
-            document.getElementById('qr_preview_container').style.display = 'block';
+            // -------------------------------------------------------------------
+            // Generate QR Code Preview using external QR API
+            // -------------------------------------------------------------------
+            // The QR code encodes the scan.php URL with the space number
+            const baseUrl = window.location.origin + '/mawgifi_system';  // Line: Get base URL
+            const qrData = encodeURIComponent(baseUrl + '/modules/booking/scan.php?slot=' + space.space_number);  // Line: Encode scan URL
+            const qrCodeUrl = 'https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=' + qrData;  // Line: Build QR API URL
+            document.getElementById('qr_preview_image').src = qrCodeUrl;  // Line: Set image source
+            document.getElementById('qr_preview_container').style.display = 'block';  // Line: Show QR container
             
-            document.getElementById('spaceModal').classList.add('show');
+            document.getElementById('spaceModal').classList.add('show');  // Line: Display modal
         }
 
+        /**
+         * Handle space form submission (create or update)
+         * 
+         * FLOW:
+         * 1. Prevent default form submit
+         * 2. For new spaces, validate against 100 space limit
+         * 3. Build FormData from form fields
+         * 4. Determine action (create or update) based on space_id presence
+         * 5. Send POST request to parking_api.php
+         * 6. Parse JSON response
+         * 7. Show toast and reload page on success
+         * 
+         * @param {Event} e - Form submit event
+         */
         async function submitSpaceForm(e) {
-            e.preventDefault();
-            console.log('Submitting space form');
+            e.preventDefault();  // Line: Stop form from traditional submit
+            console.log('Submitting space form');  // Line: Debug log
             
-            // Validate space count before creating (only for new spaces, not updates)
-            const spaceId = document.getElementById('space_id').value;
-            if (!spaceId) {
-                const validation = await validateSpaceCount(1);
-                if (!validation.valid) {
-                    showToast(validation.message, 'error');
-                    return;
+            // -------------------------------------------------------------------
+            // Validate space count before creating new space
+            // -------------------------------------------------------------------
+            const spaceId = document.getElementById('space_id').value;  // Line: Get space ID
+            if (!spaceId) {  // Line: Only validate for new spaces (not updates)
+                const validation = await validateSpaceCount(1);  // Line: Check if 1 more space is allowed
+                if (!validation.valid) {  // Line: If validation failed
+                    showToast(validation.message, 'error');  // Line: Show error message
+                    return;  // Line: Exit function
                 }
             }
             
-            const formData = new FormData(document.getElementById('spaceForm'));
-            formData.append('action', spaceId ? 'update' : 'create');
+            const formData = new FormData(document.getElementById('spaceForm'));  // Line: Collect all form fields
+            formData.append('action', spaceId ? 'update' : 'create');  // Line: Append action type
 
             try {
+                // Line: Send POST request to API
                 const response = await fetch('../api/parking_api.php?type=space', {
-                    method: 'POST',
-                    body: formData
+                    method: 'POST',  // Line: HTTP method
+                    body: formData  // Line: Form data as body
                 });
-                console.log('Response status:', response.status);
-                const text = await response.text();
-                console.log('Response text:', text);
+                console.log('Response status:', response.status);  // Line: Debug response status
+                const text = await response.text();  // Line: Get raw response text
+                console.log('Response text:', text);  // Line: Debug response body
 
-                let data;
+                let data;  // Line: Variable for parsed JSON
                 try {
-                    data = JSON.parse(text);
+                    data = JSON.parse(text);  // Line: Parse JSON response
                 } catch (parseError) {
-                    console.error('JSON parse error:', parseError);
-                    showToast('Server error: Invalid response', 'error');
-                    return;
+                    console.error('JSON parse error:', parseError);  // Line: Log parse errors
+                    showToast('Server error: Invalid response', 'error');  // Line: Show error to user
+                    return;  // Line: Exit function
                 }
 
+                // Line: Handle success or error from API
                 if (data.success) {
-                    showToast(data.message, 'success');
-                    closeSpaceModal();
-                    setTimeout(() => location.reload(), 1000);
+                    showToast(data.message, 'success');  // Line: Show success message
+                    closeSpaceModal();  // Line: Close the modal
+                    setTimeout(() => location.reload(), 1000);  // Line: Reload page after 1 second
                 } else {
-                    showToast(data.message, 'error');
+                    showToast(data.message, 'error');  // Line: Show error message
                 }
             } catch (error) {
-                console.error('Fetch error:', error);
-                showToast('An error occurred: ' + error.message, 'error');
+                console.error('Fetch error:', error);  // Line: Log network errors
+                showToast('An error occurred: ' + error.message, 'error');  // Line: Show error to user
             }
         }
 
+        /**
+         * Delete a parking space after confirmation
+         * 
+         * @param {number} spaceId - Database ID of space to delete
+         * @param {string} spaceNumber - Display number for confirmation dialog
+         */
         async function deleteSpace(spaceId, spaceNumber) {
+            // Line: Show confirmation dialog
             if (!confirm(`Are you sure you want to delete space "${spaceNumber}"?`)) {
-                return;
+                return;  // Line: User cancelled, exit function
             }
 
             try {
+                // Line: Send POST request to delete endpoint
                 const response = await fetch('../api/parking_api.php?type=space', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-                    body: `action=delete&space_id=${spaceId}`
+                    method: 'POST',  // Line: HTTP method
+                    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },  // Line: Form content type
+                    body: `action=delete&space_id=${spaceId}`  // Line: URL-encoded body
                 });
-                console.log('Delete response status:', response.status);
-                const text = await response.text();
-                console.log('Delete response:', text);
+                console.log('Delete response status:', response.status);  // Line: Debug log
+                const text = await response.text();  // Line: Get raw response text
+                console.log('Delete response:', text);  // Line: Debug log response
 
-                let data;
+                let data;  // Line: Variable for parsed JSON
                 try {
-                    data = JSON.parse(text);
+                    data = JSON.parse(text);  // Line: Parse JSON response
                 } catch (parseError) {
-                    console.error('JSON parse error:', parseError);
-                    showToast('Server error: Invalid response', 'error');
-                    return;
+                    console.error('JSON parse error:', parseError);  // Line: Log parse errors
+                    showToast('Server error: Invalid response', 'error');  // Line: Show error to user
+                    return;  // Line: Exit function
                 }
 
+                // Line: Handle success or error from API
                 if (data.success) {
-                    showToast(data.message, 'success');
-                    setTimeout(() => location.reload(), 1000);
+                    showToast(data.message, 'success');  // Line: Show success message
+                    setTimeout(() => location.reload(), 1000);  // Line: Reload page after 1 second
                 } else {
-                    showToast(data.message, 'error');
+                    showToast(data.message, 'error');  // Line: Show error message
                 }
             } catch (error) {
-                showToast('An error occurred', 'error');
+                showToast('An error occurred', 'error');  // Line: Show generic error
             }
         }
 
-        // ========== BULK SPACE FUNCTIONS ==========
+        // =====================================================================
+        // BULK SPACE CREATION FUNCTIONS
+        // =====================================================================
+        // Functions for creating multiple parking spaces at once with sequential numbering
 
+        /**
+         * Open the bulk space creation modal
+         * Resets the form and updates the preview display
+         */
         function openBulkSpaceModal() {
-            document.getElementById('bulkSpaceForm').reset();
-            updateBulkPreview();
-            document.getElementById('bulkSpaceModal').classList.add('show');
+            document.getElementById('bulkSpaceForm').reset();  // Line: Clear all form fields
+            updateBulkPreview();  // Line: Update the preview text
+            document.getElementById('bulkSpaceModal').classList.add('show');  // Line: Display modal
         }
 
+        /**
+         * Close the bulk space creation modal
+         */
         function closeBulkSpaceModal() {
-            document.getElementById('bulkSpaceModal').classList.remove('show');
+            document.getElementById('bulkSpaceModal').classList.remove('show');  // Line: Hide modal
         }
 
+        /**
+         * Update the bulk creation preview text
+         * Shows what spaces will be created based on current form values
+         * 
+         * Example output: "A-01 to A-14 (14 spaces)"
+         * 
+         * Called automatically when prefix, start, or end inputs change
+         */
         function updateBulkPreview() {
-            const prefix = document.getElementById('bulk_prefix').value || 'X';
-            const start = parseInt(document.getElementById('bulk_start').value) || 1;
-            const end = parseInt(document.getElementById('bulk_end').value) || 1;
-            const count = Math.max(0, end - start + 1);
+            const prefix = document.getElementById('bulk_prefix').value || 'X';  // Line: Get prefix with fallback
+            const start = parseInt(document.getElementById('bulk_start').value) || 1;  // Line: Parse start number
+            const end = parseInt(document.getElementById('bulk_end').value) || 1;  // Line: Parse end number
+            const count = Math.max(0, end - start + 1);  // Line: Calculate number of spaces (minimum 0)
 
-            const startStr = prefix + '-' + String(start).padStart(2, '0');
-            const endStr = prefix + '-' + String(end).padStart(2, '0');
+            // Line: Format start and end numbers with zero-padding
+            const startStr = prefix + '-' + String(start).padStart(2, '0');  // Line: e.g., "A-01"
+            const endStr = prefix + '-' + String(end).padStart(2, '0');  // Line: e.g., "A-14"
 
+            // Line: Update preview text in modal
             document.getElementById('bulk_preview').textContent =
                 `${startStr} to ${endStr} (${count} spaces)`;
         }
 
-        // Add event listeners for bulk preview update
-        document.getElementById('bulk_prefix').addEventListener('input', updateBulkPreview);
-        document.getElementById('bulk_start').addEventListener('input', updateBulkPreview);
-        document.getElementById('bulk_end').addEventListener('input', updateBulkPreview);
+        // -------------------------------------------------------------------
+        // EVENT LISTENERS FOR LIVE PREVIEW UPDATE
+        // -------------------------------------------------------------------
+        // Automatically update preview when user types in any field
+        document.getElementById('bulk_prefix').addEventListener('input', updateBulkPreview);  // Line: Listen for prefix changes
+        document.getElementById('bulk_start').addEventListener('input', updateBulkPreview);  // Line: Listen for start changes
+        document.getElementById('bulk_end').addEventListener('input', updateBulkPreview);  // Line: Listen for end changes
 
+        /**
+         * Handle bulk space creation form submission
+         * 
+         * FLOW:
+         * 1. Prevent default form submit
+         * 2. Calculate number of spaces to create
+         * 3. Validate against 100 space limit
+         * 4. Build FormData with bulk_create action
+         * 5. Send POST request to parking_api.php
+         * 6. Parse JSON response
+         * 7. Show toast and reload page on success
+         * 
+         * @param {Event} e - Form submit event
+         */
         async function submitBulkSpaceForm(e) {
-            e.preventDefault();
-            console.log('Submitting bulk space form');
+            e.preventDefault();  // Line: Stop form from traditional submit
+            console.log('Submitting bulk space form');  // Line: Debug log
             
-            // Validate space count before creating
-            const start = parseInt(document.getElementById('bulk_start').value) || 1;
-            const end = parseInt(document.getElementById('bulk_end').value) || 1;
-            const count = Math.max(0, end - start + 1);
+            // -------------------------------------------------------------------
+            // Calculate space count and validate
+            // -------------------------------------------------------------------
+            const start = parseInt(document.getElementById('bulk_start').value) || 1;  // Line: Get start number
+            const end = parseInt(document.getElementById('bulk_end').value) || 1;  // Line: Get end number
+            const count = Math.max(0, end - start + 1);  // Line: Calculate number of spaces
             
-            const validation = await validateSpaceCount(count);
-            if (!validation.valid) {
-                showToast(validation.message, 'error');
-                return;
+            const validation = await validateSpaceCount(count);  // Line: Check if count is allowed
+            if (!validation.valid) {  // Line: If validation failed
+                showToast(validation.message, 'error');  // Line: Show error message
+                return;  // Line: Exit function
             }
             
-            const formData = new FormData(document.getElementById('bulkSpaceForm'));
-            formData.append('action', 'bulk_create');
+            const formData = new FormData(document.getElementById('bulkSpaceForm'));  // Line: Collect all form fields
+            formData.append('action', 'bulk_create');  // Line: Set action to bulk_create
 
             try {
+                // Line: Send POST request to API
                 const response = await fetch('../api/parking_api.php?type=space', {
-                    method: 'POST',
-                    body: formData
+                    method: 'POST',  // Line: HTTP method
+                    body: formData  // Line: Form data as body
                 });
-                console.log('Bulk create response status:', response.status);
-                const text = await response.text();
-                console.log('Bulk create response:', text);
+                console.log('Bulk create response status:', response.status);  // Line: Debug log
+                const text = await response.text();  // Line: Get raw response text
+                console.log('Bulk create response:', text);  // Line: Debug log response
 
-                let data;
+                let data;  // Line: Variable for parsed JSON
                 try {
-                    data = JSON.parse(text);
+                    data = JSON.parse(text);  // Line: Parse JSON response
                 } catch (parseError) {
-                    console.error('JSON parse error:', parseError);
-                    showToast('Server error: Invalid response', 'error');
-                    return;
+                    console.error('JSON parse error:', parseError);  // Line: Log parse errors
+                    showToast('Server error: Invalid response', 'error');  // Line: Show error to user
+                    return;  // Line: Exit function
                 }
 
+                // Line: Handle success or error from API
                 if (data.success) {
-                    showToast(data.message, 'success');
-                    closeBulkSpaceModal();
-                    setTimeout(() => location.reload(), 1000);
+                    showToast(data.message, 'success');  // Line: Show success message (includes created/skipped counts)
+                    closeBulkSpaceModal();  // Line: Close the modal
+                    setTimeout(() => location.reload(), 1000);  // Line: Reload page after 1 second
                 } else {
-                    showToast(data.message, 'error');
+                    showToast(data.message, 'error');  // Line: Show error message
                 }
             } catch (error) {
-                console.error('Fetch error:', error);
-                showToast('An error occurred: ' + error.message, 'error');
+                console.error('Fetch error:', error);  // Line: Log network errors
+                showToast('An error occurred: ' + error.message, 'error');  // Line: Show error to user
             }
         }
 
-        // Close modals when clicking outside
-        document.querySelectorAll('.modal').forEach(modal => {
-            modal.addEventListener('click', (e) => {
-                if (e.target === modal) {
-                    modal.classList.remove('show');
+        // -------------------------------------------------------------------
+        // MODAL CLOSE ON OUTSIDE CLICK
+        // -------------------------------------------------------------------
+        // Close any modal when user clicks outside the modal content area
+        document.querySelectorAll('.modal').forEach(modal => {  // Line: Loop through all modals
+            modal.addEventListener('click', (e) => {  // Line: Add click handler
+                if (e.target === modal) {  // Line: If click was on backdrop (not content)
+                    modal.classList.remove('show');  // Line: Hide the modal
                 }
             });
         });
 
-        // Calculate and display total space count
+        // =====================================================================
+        // STATISTICS AND VALIDATION FUNCTIONS
+        // =====================================================================
+        // Functions for fetching statistics and validating space limits
+
+        /**
+         * Fetch and display total space count from API
+         * Updates the counter UI and changes background color based on usage:
+         * - Green: Under 90 spaces
+         * - Yellow: 90-99 spaces (warning)
+         * - Red: 100 spaces (at limit)
+         */
         function updateTotalSpaceCount() {
-            fetch('../api/parking_api.php?type=stats')
-                .then(response => response.json())
+            fetch('../api/parking_api.php?type=stats')  // Line: Fetch stats from API
+                .then(response => response.json())  // Line: Parse JSON response
                 .then(data => {
-                    if (data.success) {
-                        const totalSpaces = data.total_spaces || 0;
-                        const countElement = document.getElementById('totalSpaceCount');
-                        countElement.textContent = totalSpaces;
+                    if (data.success) {  // Line: If API call succeeded
+                        const totalSpaces = data.total_spaces || 0;  // Line: Get total count with default 0
+                        const countElement = document.getElementById('totalSpaceCount');  // Line: Get counter element
+                        countElement.textContent = totalSpaces;  // Line: Update displayed count
                         
-                        // Change color based on usage
-                        const parent = countElement.parentElement.parentElement;
-                        if (totalSpaces >= 100) {
-                            parent.style.background = '#fee2e2';
-                            parent.style.borderColor = '#ef4444';
-                        } else if (totalSpaces >= 90) {
-                            parent.style.background = '#fef3c7';
-                            parent.style.borderColor = '#f59e0b';
-                        } else {
-                            parent.style.background = '#d1fae5';
-                            parent.style.borderColor = '#10b981';
+                        // -----------------------------------------------------------
+                        // Change background color based on usage level
+                        // -----------------------------------------------------------
+                        const parent = countElement.parentElement.parentElement;  // Line: Get parent container
+                        if (totalSpaces >= 100) {  // Line: At limit
+                            parent.style.background = '#fee2e2';  // Line: Red background
+                            parent.style.borderColor = '#ef4444';  // Line: Red border
+                        } else if (totalSpaces >= 90) {  // Line: Near limit
+                            parent.style.background = '#fef3c7';  // Line: Yellow background
+                            parent.style.borderColor = '#f59e0b';  // Line: Yellow border
+                        } else {  // Line: Under 90
+                            parent.style.background = '#d1fae5';  // Line: Green background
+                            parent.style.borderColor = '#10b981';  // Line: Green border
                         }
                     }
                 })
-                .catch(error => console.error('Error fetching stats:', error));
+                .catch(error => console.error('Error fetching stats:', error));  // Line: Log any errors
         }
 
-        // Validate space count before creating
+        /**
+         * Validate if creating additional spaces would exceed the 100 space limit
+         * 
+         * FLOW:
+         * 1. Fetch current space count from API
+         * 2. Check if current + new would exceed 100
+         * 3. Return validation result object
+         * 
+         * @param {number} newSpaceCount - Number of spaces to be created
+         * @returns {Object} { valid: boolean, message: string }
+         */
         async function validateSpaceCount(newSpaceCount) {
             try {
-                const response = await fetch('../api/parking_api.php?type=stats');
-                const data = await response.json();
-                if (data.success) {
-                    const currentTotal = data.total_spaces || 0;
-                    if (currentTotal + newSpaceCount > 100) {
-                        return {
-                            valid: false,
-                            message: `Cannot create ${newSpaceCount} space(s). Current total: ${currentTotal}, would exceed 100 space limit.`
+                const response = await fetch('../api/parking_api.php?type=stats');  // Line: Fetch stats
+                const data = await response.json();  // Line: Parse JSON
+                if (data.success) {  // Line: If API succeeded
+                    const currentTotal = data.total_spaces || 0;  // Line: Get current count
+                    if (currentTotal + newSpaceCount > 100) {  // Line: Would exceed limit?
+                        return {  // Line: Return failure result
+                            valid: false,  // Line: Validation failed
+                            message: `Cannot create ${newSpaceCount} space(s). Current total: ${currentTotal}, would exceed 100 space limit.`  // Line: Error message
                         };
                     }
-                    return { valid: true };
+                    return { valid: true };  // Line: Validation passed
                 }
             } catch (error) {
-                console.error('Validation error:', error);
+                console.error('Validation error:', error);  // Line: Log errors
             }
-            return { valid: true }; // Allow if validation fails
+            return { valid: true };  // Line: Allow if validation fails (fail-open)
         }
 
-        // Initialize
-        updateTotalSpaceCount();
-        console.log('All functions defined successfully');
+        // =====================================================================
+        // INITIALIZATION
+        // =====================================================================
+        // Run on page load
+        
+        updateTotalSpaceCount();  // Line: Fetch and display initial space count
+        console.log('All functions defined successfully');  // Line: Debug confirmation
     </script>
 </body>
 
