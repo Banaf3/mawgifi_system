@@ -81,7 +81,10 @@ if (checkBookingConflict($conn, $space_id, $booking_start, $booking_end)) {
 }
 
 // Create booking
-$qr_url = 'http://localhost/mawgifi_system/modules/booking/scan.php?slot=' . $slot_id;
+$protocol = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? 'https' : 'http';
+$host = $_SERVER['HTTP_HOST'];
+$base_path = dirname(dirname(dirname($_SERVER['SCRIPT_NAME']))); // Gets /mawgifi_system
+$qr_url = $protocol . '://' . $host . $base_path . '/modules/booking/scan.php?slot=' . $slot_id;
 $stmt = $conn->prepare("INSERT INTO Booking (vehicle_id, Space_id, booking_start, booking_end, booking_qr_code, status) VALUES (?, ?, ?, ?, ?, 'pending')");
 $stmt->bind_param("iisss", $vehicle_id, $space_id, $booking_start, $booking_end, $qr_url);
 

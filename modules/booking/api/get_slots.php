@@ -4,13 +4,19 @@ require_once '../../../config/database.php';
 
 header('Content-Type: application/json');
 
-if (!isLoggedIn()) { echo json_encode(['error' => 'Not logged in']); exit; }
+if (!isLoggedIn()) {
+    echo json_encode(['error' => 'Not logged in']);
+    exit;
+}
 
 $date = $_GET['date'] ?? '';
 $start = $_GET['start'] ?? '';
 $end = $_GET['end'] ?? '';
 
-if (!$date || !$start || !$end) { echo json_encode(['booked' => []]); exit; }
+if (!$date || !$start || !$end) {
+    echo json_encode(['booked' => []]);
+    exit;
+}
 
 $conn = getDBConnection();
 
@@ -27,7 +33,9 @@ $stmt->execute();
 $result = $stmt->get_result();
 
 $booked = [];
-while ($row = $result->fetch_assoc()) { $booked[] = $row['space_number']; }
+while ($row = $result->fetch_assoc()) {
+    $booked[] = $row['space_number'];
+}
 
 $stmt->close();
 $conn->close();

@@ -76,6 +76,8 @@ CREATE TABLE ParkingArea (
     Availability_id INT,
     area_name VARCHAR(100) NOT NULL,
     area_type VARCHAR(50),
+    area_color VARCHAR(20) DEFAULT '#a0a0a0',
+    area_status ENUM('available', 'occupied', 'temporarily_closed', 'under_maintenance') DEFAULT 'available',
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     AreaSize DECIMAL(10, 2),
@@ -93,6 +95,7 @@ CREATE TABLE ParkingSpace (
     space_number VARCHAR(20) NOT NULL,
     qr_code VARCHAR(255),
     qr_img_path VARCHAR(255),
+    status ENUM('available', 'occupied', 'reserved', 'maintenance') DEFAULT 'available',
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     FOREIGN KEY (area_id) REFERENCES ParkingArea(area_id) ON DELETE CASCADE ON UPDATE CASCADE,
@@ -152,21 +155,21 @@ INSERT INTO Event (event_type, event_time, duration_minutes, event_name, RecordR
 -- Sample Parking Areas
 -- Area A: Slots 1-14, Area B: Slots 15-44, Area C: Slots 45-65
 -- Area D: Slots 66-86, Area E: Slots 87-100
-INSERT INTO ParkingArea (Availability_id, area_name, area_type, AreaSize) VALUES
-(NULL, 'Area A', 'Standard', 500.00),
-(NULL, 'Area B', 'Standard', 800.00),
-(NULL, 'Area C', 'Standard', 600.00),
-(NULL, 'Area D', 'Standard', 600.00),
-(NULL, 'Area E', 'Standard', 400.00);
+INSERT INTO ParkingArea (Availability_id, area_name, area_type, AreaSize, area_color, area_status) VALUES
+(NULL, 'Area A', 'Standard', 500.00, '#a0aec0', 'available'),
+(NULL, 'Area B', 'Standard', 800.00, '#4299e1', 'available'),
+(NULL, 'Area C', 'Standard', 600.00, '#48bb78', 'available'),
+(NULL, 'Area D', 'Standard', 600.00, '#ed8936', 'available'),
+(NULL, 'Area E', 'Standard', 400.00, '#f56565', 'available');
 
 -- Sample Parking Spaces
-INSERT INTO ParkingSpace (area_id, Availability_id, space_number, qr_code, qr_img_path) VALUES
-(1, NULL, 'A-01', 'QR_A01_001', '/qrcodes/a01.png'),
-(1, NULL, 'A-02', 'QR_A02_002', '/qrcodes/a02.png'),
-(1, NULL, 'A-03', 'QR_A03_003', '/qrcodes/a03.png'),
-(2, NULL, 'B-01', 'QR_B01_004', '/qrcodes/b01.png'),
-(2, NULL, 'B-02', 'QR_B02_005', '/qrcodes/b02.png'),
-(3, NULL, 'C-01', 'QR_C01_006', '/qrcodes/c01.png');
+INSERT INTO ParkingSpace (area_id, Availability_id, space_number, qr_code, qr_img_path, status) VALUES
+(1, NULL, 'A-01', 'QR_A01_001', '/qrcodes/a01.png', 'available'),
+(1, NULL, 'A-02', 'QR_A02_002', '/qrcodes/a02.png', 'available'),
+(1, NULL, 'A-03', 'QR_A03_003', '/qrcodes/a03.png', 'available'),
+(2, NULL, 'B-01', 'QR_B01_004', '/qrcodes/b01.png', 'available'),
+(2, NULL, 'B-02', 'QR_B02_005', '/qrcodes/b02.png', 'available'),
+(3, NULL, 'C-01', 'QR_C01_006', '/qrcodes/c01.png', 'available');
 
 
 

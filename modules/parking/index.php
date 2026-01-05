@@ -81,14 +81,14 @@ if ($conn) {
     }
 
     // Query 2: Get all existing parking spaces from database with their status
-    $space_sql = "SELECT ps.space_number, ps.Space_id, a.status, pa.area_name";
+    $space_sql = "SELECT ps.space_number, ps.Space_id, ps.status, pa.area_name";
     if ($has_color_column) {
         $space_sql .= ", pa.area_color";
     }
     if ($has_status_column) {
         $space_sql .= ", pa.area_status";
     }
-    $space_sql .= " FROM ParkingSpace ps JOIN ParkingArea pa ON ps.area_id = pa.area_id LEFT JOIN Availability a ON ps.Availability_id = a.Availability_id";
+    $space_sql .= " FROM ParkingSpace ps JOIN ParkingArea pa ON ps.area_id = pa.area_id";
 
     $space_result = $conn->query($space_sql);
     if ($space_result) {
@@ -709,7 +709,7 @@ $conn->close();
             <?php if (empty($vehicles)): ?>
                 <div class="no-vehicle-msg">
                     <p>No approved vehicle.</p>
-                    <a href="../membership/index.php">Register one</a>
+                    <a href="../../Moudel1/Student.php?view=vehicles">Register one</a>
                 </div>
             <?php else: ?>
                 <div id="placeholder" class="placeholder-text">
