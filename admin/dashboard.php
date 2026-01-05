@@ -202,10 +202,11 @@ $username = $_SESSION['username'] ?? 'Administrator';
         <div class="brand">Mawgifi</div>
 
         <div class="nav-links">
-            <a href="../Moudel1/Admin.php?view=dashboard">Dashboard</a>
+            <a href="../Moudel1/Admin.php?view=dashboard" class="active">Dashboard</a>
             <a href="../modules/membership/index.php">Vehicles</a>
             <a href="../modules/parking/index.php">Parking Map</a>
             <a href="parking_management.php">Manage Parking</a>
+            <a href="event_management.php">Events</a>
             <a href="../modules/booking/index.php">Bookings</a>
             <a href="../Moudel1/Admin.php?view=register">Register Student</a>
             <a href="../Moudel1/Admin.php?view=manage">Manage Profile</a>
@@ -226,24 +227,34 @@ $username = $_SESSION['username'] ?? 'Administrator';
         </div>
 
         <div class="modules-grid">
-            <a href="../modules/membership/index.php" class="module-card m1">
-                <h3>Vehicles</h3>
-                <p>Manage user memberships, profiles, and vehicle registrations.</p>
-            </a>
-
             <a href="../modules/parking/index.php" class="module-card m2">
-                <h3>Parking Map</h3>
+                <h3>🅿️ Parking Map</h3>
                 <p>View parking areas map and monitor real-time slot availability.</p>
             </a>
 
             <a href="parking_management.php" class="module-card m4">
-                <h3>Manage Parking</h3>
+                <h3>🚗 Manage Parking</h3>
                 <p>Add, edit, and delete parking areas and individual parking spaces.</p>
             </a>
 
+            <a href="event_management.php" class="module-card m1">
+                <h3>📅 Event Management</h3>
+                <p>Track facility events like maintenance, cleaning, and lawn mowing.</p>
+            </a>
+
             <a href="../modules/booking/index.php" class="module-card m3">
-                <h3>Bookings</h3>
+                <h3>📋 Bookings</h3>
                 <p>Oversee parking bookings and manage QR code access systems.</p>
+            </a>
+
+            <a href="../modules/membership/index.php" class="module-card m1">
+                <h3>🚙 Vehicles</h3>
+                <p>Manage user memberships, profiles, and vehicle registrations.</p>
+            </a>
+
+            <a href="../Moudel1/Admin.php?view=profile" class="module-card m2">
+                <h3>👤 User Management</h3>
+                <p>Register students, manage profiles, and handle user accounts.</p>
             </a>
         </div>
     </div>

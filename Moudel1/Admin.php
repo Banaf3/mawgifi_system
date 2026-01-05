@@ -211,11 +211,10 @@ closeDBConnection($conn);
             <a href="../modules/membership/index.php">Vehicles</a>
             <a href="../modules/parking/index.php">Parking Map</a>
             <a href="../admin/parking_management.php">Manage Parking</a>
+            <a href="../admin/event_management.php">Events</a>
             <a href="../modules/booking/index.php">Bookings</a>
-            <a href="Admin.php?view=register" <?php echo $current_view === 'register' ? 'class="active"' : ''; ?>>Register
-                Student</a>
-            <a href="Admin.php?view=manage" <?php echo $current_view === 'manage' ? 'class="active"' : ''; ?>>Manage
-                Profile</a>
+            <a href="Admin.php?view=register" <?php echo $current_view === 'register' ? 'class="active"' : ''; ?>>Register Student</a>
+            <a href="Admin.php?view=manage" <?php echo $current_view === 'manage' ? 'class="active"' : ''; ?>>Manage Profile</a>
             <a href="Admin.php?view=profile" <?php echo $current_view === 'profile' ? 'class="active"' : ''; ?>>Profile</a>
         </div>
 

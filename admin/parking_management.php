@@ -7,6 +7,7 @@
 
 require_once '../config/database.php';
 require_once '../config/session.php';
+require_once 'check_event_status.php';
 
 // Require admin access
 requireAdmin();
@@ -498,6 +499,7 @@ $conn->close();
             <a href="../modules/membership/index.php">Vehicles</a>
             <a href="../modules/parking/index.php">Parking Map</a>
             <a href="parking_management.php" class="active">Manage Parking</a>
+            <a href="event_management.php">Events</a>
             <a href="../modules/booking/index.php">Bookings</a>
             <a href="../Moudel1/Admin.php?view=register">Register Student</a>
             <a href="../Moudel1/Admin.php?view=manage">Manage Profile</a>
@@ -514,10 +516,9 @@ $conn->close();
     <div class="container">
         <div class="page-header">
             <h1>🅿️ Parking Management</h1>
-            <a href="init_parking.php" class="btn btn-success"
-                onclick="return confirm('This will create all 5 parking areas (A-E) and 100 parking spaces. Continue?');">
-                🚀 Initialize All Parking Data
-            </a>
+            <div style="background: #fef3c7; padding: 15px; border-radius: 10px; border-left: 4px solid #f59e0b;">
+                <strong>⚠️ Total Parking Limit:</strong> <span id="totalSpaceCount">0</span> / 100 spaces used
+            </div>
         </div>
 
         <!-- Tabs -->
@@ -552,6 +553,8 @@ $conn->close();
                                     <th>Area Name</th>
                                     <th>Area Type</th>
                                     <th>Area Size</th>
+                                    <th>Status</th>
+                                    <th>Color</th>
                                     <th>Spaces</th>
                                     <th>Created</th>
                                     <th>Actions</th>
@@ -568,6 +571,20 @@ $conn->close();
                                             </span>
                                         </td>
                                         <td><?php echo $area['AreaSize'] ? $area['AreaSize'] . ' m²' : 'N/A'; ?></td>
+                                        <td>
+                                            <?php 
+                                            $status = $area['area_status'] ?? 'available';
+                                            $statusColor = 'success';
+                                            $statusText = ucwords(str_replace('_', ' ', $status));
+                                            if (in_array($status, ['occupied', 'temporarily_closed', 'under_maintenance'])) {
+                                                $statusColor = 'danger';
+                                            }
+                                            ?>
+                                            <span class="badge badge-<?php echo $statusColor; ?>"><?php echo $statusText; ?></span>
+                                        </td>
+                                        <td>
+                                            <div style="width: 30px; height: 30px; background-color: <?php echo htmlspecialchars($area['area_color'] ?? '#a0a0a0'); ?>; border-radius: 5px; border: 2px solid #e2e8f0;"></div>
+                                        </td>
                                         <td><span class="badge badge-success"><?php echo $area['space_count']; ?> spaces</span>
                                         </td>
                                         <td><?php echo date('M j, Y', strtotime($area['created_at'])); ?></td>
@@ -696,15 +713,20 @@ $conn->close();
                     </div>
 
                     <div class="form-group">
-                        <label for="area_availability">Availability</label>
-                        <select id="area_availability" name="availability_id">
-                            <option value="">-- Select Availability --</option>
-                            <?php foreach ($availabilities as $av): ?>
-                                <option value="<?php echo $av['Availability_id']; ?>">
-                                    <?php echo $av['date'] . ' (' . $av['status'] . ')'; ?>
-                                </option>
-                            <?php endforeach; ?>
+                        <label for="area_color">Area Color for Map *</label>
+                        <input type="color" id="area_color" name="area_color" value="#a0a0a0" required>
+                        <small style="color: #718096;">This color will be used to display this area on the parking map</small>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="area_status">Area Status</label>
+                        <select id="area_status" name="area_status">
+                            <option value="available">Available</option>
+                            <option value="occupied">Occupied</option>
+                            <option value="temporarily_closed">Temporarily Closed</option>
+                            <option value="under_maintenance">Under Maintenance</option>
                         </select>
+                        <small style="color: #718096;">Occupied, Temporarily Closed, and Under Maintenance areas will show as red on the map</small>
                     </div>
                 </div>
                 <div class="modal-footer">
@@ -872,7 +894,8 @@ $conn->close();
             document.getElementById('area_name').value = area.area_name;
             document.getElementById('area_type').value = area.area_type || 'Standard';
             document.getElementById('area_size').value = area.AreaSize || '';
-            document.getElementById('area_availability').value = area.Availability_id || '';
+            document.getElementById('area_color').value = area.area_color || '#a0a0a0';
+            document.getElementById('area_status').value = area.area_status || 'available';
             document.getElementById('areaModal').classList.add('show');
         }
 
@@ -986,9 +1009,18 @@ $conn->close();
         async function submitSpaceForm(e) {
             e.preventDefault();
             console.log('Submitting space form');
+            
+            // Validate space count before creating (only for new spaces, not updates)
+            const spaceId = document.getElementById('space_id').value;
+            if (!spaceId) {
+                const validation = await validateSpaceCount(1);
+                if (!validation.valid) {
+                    showToast(validation.message, 'error');
+                    return;
+                }
+            }
+            
             const formData = new FormData(document.getElementById('spaceForm'));
-            const spaceId = formData.get('space_id');
-
             formData.append('action', spaceId ? 'update' : 'create');
 
             try {
@@ -1090,6 +1122,18 @@ $conn->close();
         async function submitBulkSpaceForm(e) {
             e.preventDefault();
             console.log('Submitting bulk space form');
+            
+            // Validate space count before creating
+            const start = parseInt(document.getElementById('bulk_start').value) || 1;
+            const end = parseInt(document.getElementById('bulk_end').value) || 1;
+            const count = Math.max(0, end - start + 1);
+            
+            const validation = await validateSpaceCount(count);
+            if (!validation.valid) {
+                showToast(validation.message, 'error');
+                return;
+            }
+            
             const formData = new FormData(document.getElementById('bulkSpaceForm'));
             formData.append('action', 'bulk_create');
 
@@ -1133,7 +1177,56 @@ $conn->close();
             });
         });
 
+        // Calculate and display total space count
+        function updateTotalSpaceCount() {
+            fetch('parking_api.php?type=stats')
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        const totalSpaces = data.total_spaces || 0;
+                        const countElement = document.getElementById('totalSpaceCount');
+                        countElement.textContent = totalSpaces;
+                        
+                        // Change color based on usage
+                        const parent = countElement.parentElement.parentElement;
+                        if (totalSpaces >= 100) {
+                            parent.style.background = '#fee2e2';
+                            parent.style.borderColor = '#ef4444';
+                        } else if (totalSpaces >= 90) {
+                            parent.style.background = '#fef3c7';
+                            parent.style.borderColor = '#f59e0b';
+                        } else {
+                            parent.style.background = '#d1fae5';
+                            parent.style.borderColor = '#10b981';
+                        }
+                    }
+                })
+                .catch(error => console.error('Error fetching stats:', error));
+        }
+
+        // Validate space count before creating
+        async function validateSpaceCount(newSpaceCount) {
+            try {
+                const response = await fetch('parking_api.php?type=stats');
+                const data = await response.json();
+                if (data.success) {
+                    const currentTotal = data.total_spaces || 0;
+                    if (currentTotal + newSpaceCount > 100) {
+                        return {
+                            valid: false,
+                            message: `Cannot create ${newSpaceCount} space(s). Current total: ${currentTotal}, would exceed 100 space limit.`
+                        };
+                    }
+                    return { valid: true };
+                }
+            } catch (error) {
+                console.error('Validation error:', error);
+            }
+            return { valid: true }; // Allow if validation fails
+        }
+
         // Initialize
+        updateTotalSpaceCount();
         console.log('All functions defined successfully');
     </script>
 </body>

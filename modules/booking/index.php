@@ -480,6 +480,7 @@ $conn->close();
                 <a href="../membership/index.php">Vehicles</a>
                 <a href="../parking/index.php">Parking Map</a>
                 <a href="../../admin/parking_management.php">Manage Parking</a>
+                <a href="../../admin/event_management.php">Events</a>
                 <a href="index.php" class="active">Bookings</a>
                 <a href="../../Moudel1/Admin.php?view=register">Register Student</a>
                 <a href="../../Moudel1/Admin.php?view=manage">Manage Profile</a>
