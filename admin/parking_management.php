@@ -501,6 +501,7 @@ $conn->close();
             <a href="parking_management.php" class="active">Manage Parking</a>
             <a href="event_management.php">Events</a>
             <a href="../modules/booking/index.php">Bookings</a>
+            <a href="../Moudel1/Admin.php?view=reports">Reports</a>
             <a href="../Moudel1/Admin.php?view=register">Register Student</a>
             <a href="../Moudel1/Admin.php?view=manage">Manage Profile</a>
             <a href="../Moudel1/Admin.php?view=profile">Profile</a>
@@ -572,7 +573,7 @@ $conn->close();
                                         </td>
                                         <td><?php echo $area['AreaSize'] ? $area['AreaSize'] . ' m²' : 'N/A'; ?></td>
                                         <td>
-                                            <?php 
+                                            <?php
                                             $status = $area['area_status'] ?? 'available';
                                             $statusColor = 'success';
                                             $statusText = ucwords(str_replace('_', ' ', $status));
@@ -580,10 +581,13 @@ $conn->close();
                                                 $statusColor = 'danger';
                                             }
                                             ?>
-                                            <span class="badge badge-<?php echo $statusColor; ?>"><?php echo $statusText; ?></span>
+                                            <span
+                                                class="badge badge-<?php echo $statusColor; ?>"><?php echo $statusText; ?></span>
                                         </td>
                                         <td>
-                                            <div style="width: 30px; height: 30px; background-color: <?php echo htmlspecialchars($area['area_color'] ?? '#a0a0a0'); ?>; border-radius: 5px; border: 2px solid #e2e8f0;"></div>
+                                            <div
+                                                style="width: 30px; height: 30px; background-color: <?php echo htmlspecialchars($area['area_color'] ?? '#a0a0a0'); ?>; border-radius: 5px; border: 2px solid #e2e8f0;">
+                                            </div>
                                         </td>
                                         <td><span class="badge badge-success"><?php echo $area['space_count']; ?> spaces</span>
                                         </td>
@@ -715,7 +719,8 @@ $conn->close();
                     <div class="form-group">
                         <label for="area_color">Area Color for Map *</label>
                         <input type="color" id="area_color" name="area_color" value="#a0a0a0" required>
-                        <small style="color: #718096;">This color will be used to display this area on the parking map</small>
+                        <small style="color: #718096;">This color will be used to display this area on the parking
+                            map</small>
                     </div>
 
                     <div class="form-group">
@@ -726,7 +731,8 @@ $conn->close();
                             <option value="temporarily_closed">Temporarily Closed</option>
                             <option value="under_maintenance">Under Maintenance</option>
                         </select>
-                        <small style="color: #718096;">Occupied, Temporarily Closed, and Under Maintenance areas will show as red on the map</small>
+                        <small style="color: #718096;">Occupied, Temporarily Closed, and Under Maintenance areas will
+                            show as red on the map</small>
                     </div>
                 </div>
                 <div class="modal-footer">
@@ -768,9 +774,12 @@ $conn->close();
 
                     <div class="form-group">
                         <label for="qr_code">QR Code Preview</label>
-                        <div id="qr_preview_container" style="margin: 10px 0; text-align: center; padding: 15px; background: #f7fafc; border-radius: 8px; display: none;">
-                            <img id="qr_preview_image" src="" alt="QR Code" style="width: 150px; height: 150px; border-radius: 8px; border: 2px solid #e2e8f0;">
-                            <p style="margin-top: 10px; color: #718096; font-size: 13px;">Scan this QR at the parking slot</p>
+                        <div id="qr_preview_container"
+                            style="margin: 10px 0; text-align: center; padding: 15px; background: #f7fafc; border-radius: 8px; display: none;">
+                            <img id="qr_preview_image" src="" alt="QR Code"
+                                style="width: 150px; height: 150px; border-radius: 8px; border: 2px solid #e2e8f0;">
+                            <p style="margin-top: 10px; color: #718096; font-size: 13px;">Scan this QR at the parking
+                                slot</p>
                         </div>
                         <input type="hidden" id="qr_code" name="qr_code" placeholder="Leave empty to auto-generate">
                     </div>
@@ -994,21 +1003,21 @@ $conn->close();
             document.getElementById('space_number').value = space.space_number;
             document.getElementById('qr_code').value = space.qr_code || '';
             document.getElementById('status').value = space.status || 'available';
-            
+
             // Generate and show QR code preview
             const baseUrl = window.location.origin + '/mawgifi_system';
             const qrData = encodeURIComponent(baseUrl + '/modules/booking/scan.php?slot=' + space.space_number);
             const qrCodeUrl = 'https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=' + qrData;
             document.getElementById('qr_preview_image').src = qrCodeUrl;
             document.getElementById('qr_preview_container').style.display = 'block';
-            
+
             document.getElementById('spaceModal').classList.add('show');
         }
 
         async function submitSpaceForm(e) {
             e.preventDefault();
             console.log('Submitting space form');
-            
+
             // Validate space count before creating (only for new spaces, not updates)
             const spaceId = document.getElementById('space_id').value;
             if (!spaceId) {
@@ -1018,7 +1027,7 @@ $conn->close();
                     return;
                 }
             }
-            
+
             const formData = new FormData(document.getElementById('spaceForm'));
             formData.append('action', spaceId ? 'update' : 'create');
 
@@ -1121,18 +1130,18 @@ $conn->close();
         async function submitBulkSpaceForm(e) {
             e.preventDefault();
             console.log('Submitting bulk space form');
-            
+
             // Validate space count before creating
             const start = parseInt(document.getElementById('bulk_start').value) || 1;
             const end = parseInt(document.getElementById('bulk_end').value) || 1;
             const count = Math.max(0, end - start + 1);
-            
+
             const validation = await validateSpaceCount(count);
             if (!validation.valid) {
                 showToast(validation.message, 'error');
                 return;
             }
-            
+
             const formData = new FormData(document.getElementById('bulkSpaceForm'));
             formData.append('action', 'bulk_create');
 
@@ -1185,7 +1194,7 @@ $conn->close();
                         const totalSpaces = data.total_spaces || 0;
                         const countElement = document.getElementById('totalSpaceCount');
                         countElement.textContent = totalSpaces;
-                        
+
                         // Change color based on usage
                         const parent = countElement.parentElement.parentElement;
                         if (totalSpaces >= 100) {

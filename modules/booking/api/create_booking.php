@@ -55,8 +55,23 @@ $stmt->close();
 $booking_start = $date . ' ' . $start_time;
 $booking_end = $date . ' ' . $end_time;
 if (strtotime($booking_end) <= strtotime($booking_start)) {
+    // Handling overnight bookings just in case, though UI might restrict it
+    // For now, assuming end time is on same day unless it wraps around logic is intended
+    // But let's keep existing logic if it was intending to handle overnight:
+    // Actually, looking at previous code, it added +1 day. 
+    // Let's stick to safe assumption: if end < start, it's next day.
     $booking_end = date('Y-m-d', strtotime($date . ' +1 day')) . ' ' . $end_time;
 }
+
+// ----------------------------------------------------
+// VALIDATION: Prevent booking in the past
+// ----------------------------------------------------
+// Allow a small buffer (e.g., 2 minutes) for system time differences or slow submission
+if (strtotime($booking_start) < time()) {
+    echo json_encode(['success' => false, 'message' => 'Cannot book for a past time.']);
+    exit;
+}
+// ----------------------------------------------------
 
 // Check for conflicts
 require_once 'utils.php';

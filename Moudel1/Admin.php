@@ -89,6 +89,30 @@ $row = $result->fetch_assoc();
 $total_vehicles = $row['count'];
 $stmt->close();
 
+// Reports Data: Vehicles by Type
+$vehicle_types = [];
+$vehicle_counts = [];
+$stmt = $conn->prepare("SELECT vehicle_type, COUNT(*) as count FROM Vehicle GROUP BY vehicle_type");
+$stmt->execute();
+$result = $stmt->get_result();
+while ($row = $result->fetch_assoc()) {
+    $vehicle_types[] = $row['vehicle_type'];
+    $vehicle_counts[] = $row['count'];
+}
+$stmt->close();
+
+// Reports Data: Bookings by Status
+$booking_statuses = [];
+$booking_counts = [];
+$stmt = $conn->prepare("SELECT status, COUNT(*) as count FROM Booking GROUP BY status");
+$stmt->execute();
+$result = $stmt->get_result();
+while ($row = $result->fetch_assoc()) {
+    $booking_statuses[] = ucfirst($row['status']);
+    $booking_counts[] = $row['count'];
+}
+$stmt->close();
+
 // Handle delete user
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['delete_user'])) {
     $delete_id = intval($_POST['delete_user_id']);
@@ -146,16 +170,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['register_student'])) 
         $check_stmt->bind_param("s", $new_email);
         $check_stmt->execute();
         $check_result = $check_stmt->get_result();
-        
+
         if ($check_result->num_rows > 0) {
             $error_message = "Email already exists!";
         } else {
             $hashed_password = password_hash($new_password, PASSWORD_DEFAULT);
             $user_type = 'user'; // Student type
-            
+
             $stmt = $conn->prepare("INSERT INTO User (UserName, Email, PhoneNumber, password, UserType) VALUES (?, ?, ?, ?, ?)");
             $stmt->bind_param("sssss", $new_username, $new_email, $new_phone, $hashed_password, $user_type);
-            
+
             if ($stmt->execute()) {
                 $success_message = "Student registered successfully! They can now login.";
             } else {
@@ -196,6 +220,8 @@ closeDBConnection($conn);
         echo 'Register Student';
     elseif ($current_view === 'manage')
         echo 'Manage Profile';
+    elseif ($current_view === 'reports')
+        echo 'Reports Dashboard';
     else
         echo 'Admin Dashboard';
     ?> - Mawgifi</title>
@@ -213,8 +239,11 @@ closeDBConnection($conn);
             <a href="../admin/parking_management.php">Manage Parking</a>
             <a href="../admin/event_management.php">Events</a>
             <a href="../modules/booking/index.php">Bookings</a>
-            <a href="Admin.php?view=register" <?php echo $current_view === 'register' ? 'class="active"' : ''; ?>>Register Student</a>
-            <a href="Admin.php?view=manage" <?php echo $current_view === 'manage' ? 'class="active"' : ''; ?>>Manage Profile</a>
+            <a href="Admin.php?view=reports" <?php echo $current_view === 'reports' ? 'class="active"' : ''; ?>>Reports</a>
+            <a href="Admin.php?view=register" <?php echo $current_view === 'register' ? 'class="active"' : ''; ?>>Register
+                Student</a>
+            <a href="Admin.php?view=manage" <?php echo $current_view === 'manage' ? 'class="active"' : ''; ?>>Manage
+                Profile</a>
             <a href="Admin.php?view=profile" <?php echo $current_view === 'profile' ? 'class="active"' : ''; ?>>Profile</a>
         </div>
 
@@ -499,6 +528,95 @@ closeDBConnection($conn);
                     </form>
                 </div>
             </div>
+        <?php elseif ($current_view === 'reports'): ?>
+            <!-- Reports Dashboard View -->
+            <div class="module-header">
+                <h1>📊 System Reports</h1>
+                <p>Graphical overview of system data</p>
+            </div>
+
+            <div class="content-area">
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(400px, 1fr)); gap: 20px;">
+                    
+                    <!-- Chart 1: Users -->
+                    <div style="background: white; padding: 20px; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
+                        <h3 style="margin-bottom: 15px; text-align: center;">Users Distribution</h3>
+                        <canvas id="usersChart"></canvas>
+                    </div>
+
+                    <!-- Chart 2: Vehicles -->
+                    <div style="background: white; padding: 20px; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
+                        <h3 style="margin-bottom: 15px; text-align: center;">Vehicles by Type</h3>
+                        <canvas id="vehiclesChart"></canvas>
+                    </div>
+
+                    <!-- Chart 3: Bookings -->
+                    <div style="background: white; padding: 20px; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); grid-column: 1 / -1;">
+                        <h3 style="margin-bottom: 15px; text-align: center;">Booking Statuses</h3>
+                        <div style="height: 300px;">
+                            <canvas id="bookingsChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Chart.js CDN -->
+            <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+            <script>
+                // Users Chart
+                const ctxUsers = document.getElementById('usersChart').getContext('2d');
+                new Chart(ctxUsers, {
+                    type: 'doughnut',
+                    data: {
+                        labels: ['Students', 'Staff'],
+                        datasets: [{
+                            data: [<?php echo $total_students; ?>, <?php echo $total_staff; ?>],
+                            backgroundColor: ['#4299e1', '#48bb78'],
+                            borderWidth: 0
+                        }]
+                    },
+                    options: { responsive: true }
+                });
+
+                // Vehicles Chart
+                const ctxVehicles = document.getElementById('vehiclesChart').getContext('2d');
+                new Chart(ctxVehicles, {
+                    type: 'pie',
+                    data: {
+                        labels: <?php echo json_encode($vehicle_types); ?>,
+                        datasets: [{
+                            data: <?php echo json_encode($vehicle_counts); ?>,
+                            backgroundColor: ['#ed8936', '#9f7aea', '#38b2ac', '#f56565'],
+                            borderWidth: 0
+                        }]
+                    },
+                    options: { responsive: true }
+                });
+
+                // Bookings Chart
+                const ctxBookings = document.getElementById('bookingsChart').getContext('2d');
+                new Chart(ctxBookings, {
+                    type: 'bar',
+                    data: {
+                        labels: <?php echo json_encode($booking_statuses); ?>,
+                        datasets: [{
+                            label: 'Number of Bookings',
+                            data: <?php echo json_encode($booking_counts); ?>,
+                            backgroundColor: '#667eea',
+                            borderRadius: 6
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        scales: {
+                            y: { beginAtZero: true, grid: { display: false } },
+                            x: { grid: { display: false } }
+                        }
+                    }
+                });
+            </script>
         <?php endif; ?>
     </div>
 </body>

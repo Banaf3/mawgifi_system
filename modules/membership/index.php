@@ -133,6 +133,7 @@ $username = $_SESSION['username'] ?? 'Admin';
             <a href="../../admin/parking_management.php">Manage Parking</a>
             <a href="../../admin/event_management.php">Events</a>
             <a href="../booking/index.php">Bookings</a>
+            <a href="../../Moudel1/Admin.php?view=reports">Reports</a>
             <a href="../../Moudel1/Admin.php?view=register">Register Student</a>
             <a href="../../Moudel1/Admin.php?view=manage">Manage Profile</a>
             <a href="../../Moudel1/Admin.php?view=profile">Profile</a>

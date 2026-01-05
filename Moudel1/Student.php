@@ -35,21 +35,21 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['add_vehicle'])) {
         // Handle file upload
         if (isset($_FILES['vehicle_grant']) && $_FILES['vehicle_grant']['error'] === UPLOAD_ERR_OK) {
             $upload_dir = '../uploads/vehicle_grants/';
-            
+
             // Create directory if it doesn't exist
             if (!is_dir($upload_dir)) {
                 mkdir($upload_dir, 0777, true);
             }
-            
+
             $file_extension = strtolower(pathinfo($_FILES['vehicle_grant']['name'], PATHINFO_EXTENSION));
             $allowed_extensions = ['pdf', 'jpg', 'jpeg', 'png', 'doc', 'docx'];
-            
+
             if (!in_array($file_extension, $allowed_extensions)) {
                 $error_message = "Invalid file type. Allowed: PDF, JPG, PNG, DOC, DOCX";
             } else {
                 $new_filename = 'grant_' . $user_id . '_' . time() . '.' . $file_extension;
                 $upload_path = $upload_dir . $new_filename;
-                
+
                 if (move_uploaded_file($_FILES['vehicle_grant']['tmp_name'], $upload_path)) {
                     $grant_document = 'uploads/vehicle_grants/' . $new_filename;
                 } else {
@@ -57,7 +57,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['add_vehicle'])) {
                 }
             }
         }
-        
+
         if (empty($error_message)) {
             // Check if license plate already exists
             $check_stmt = $conn->prepare("SELECT vehicle_id FROM Vehicle WHERE license_plate = ?");
@@ -112,20 +112,20 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['edit_vehicle'])) {
         // Handle file upload if a new file is provided
         if (isset($_FILES['edit_vehicle_grant']) && $_FILES['edit_vehicle_grant']['error'] === UPLOAD_ERR_OK) {
             $upload_dir = '../uploads/vehicle_grants/';
-            
+
             if (!is_dir($upload_dir)) {
                 mkdir($upload_dir, 0777, true);
             }
-            
+
             $file_extension = strtolower(pathinfo($_FILES['edit_vehicle_grant']['name'], PATHINFO_EXTENSION));
             $allowed_extensions = ['pdf', 'jpg', 'jpeg', 'png', 'doc', 'docx'];
-            
+
             if (!in_array($file_extension, $allowed_extensions)) {
                 $error_message = "Invalid file type. Allowed: PDF, JPG, PNG, DOC, DOCX";
             } else {
                 $new_filename = 'grant_' . $user_id . '_' . time() . '.' . $file_extension;
                 $upload_path = $upload_dir . $new_filename;
-                
+
                 if (move_uploaded_file($_FILES['edit_vehicle_grant']['tmp_name'], $upload_path)) {
                     $new_grant_document = 'uploads/vehicle_grants/' . $new_filename;
                 } else {
@@ -133,7 +133,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['edit_vehicle'])) {
                 }
             }
         }
-        
+
         if (empty($error_message)) {
             // Check if license plate already exists for another vehicle
             $check_stmt = $conn->prepare("SELECT vehicle_id FROM Vehicle WHERE license_plate = ? AND vehicle_id != ?");
@@ -209,7 +209,7 @@ $stmt->close();
 
 // Fetch user's vehicles
 $vehicles = [];
-$stmt = $conn->prepare("SELECT vehicle_id, vehicle_type, vehicle_model, license_plate, created_at, Approved_date, status, rejection_reason, grant_document FROM Vehicle WHERE user_id = ? ORDER BY created_at DESC");
+$stmt = $conn->prepare("SELECT vehicle_id, vehicle_type, vehicle_model, license_plate, created_at, Approved_date, status, grant_document FROM Vehicle WHERE user_id = ? ORDER BY created_at DESC");
 $stmt->bind_param("i", $user_id);
 $stmt->execute();
 $result = $stmt->get_result();
@@ -225,10 +225,13 @@ closeDBConnection($conn);
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title><?php 
-        if ($current_view === 'dashboard') echo 'Student Dashboard';
-        elseif ($current_view === 'profile') echo 'My Profile';
-        else echo 'My Vehicles';
+    <title><?php
+    if ($current_view === 'dashboard')
+        echo 'Student Dashboard';
+    elseif ($current_view === 'profile')
+        echo 'My Profile';
+    else
+        echo 'My Vehicles';
     ?> - Mawgifi</title>
     <link rel="stylesheet" href="Student.css">
 </head>
@@ -239,7 +242,8 @@ closeDBConnection($conn);
 
         <div class="nav-links">
             <a href="Student.php?view=dashboard" <?php echo $current_view === 'dashboard' ? 'class="active"' : ''; ?>>Dashboard</a>
-            <a href="Student.php?view=vehicles" <?php echo $current_view === 'vehicles' ? 'class="active"' : ''; ?>>My Vehicles</a>
+            <a href="Student.php?view=vehicles" <?php echo $current_view === 'vehicles' ? 'class="active"' : ''; ?>>My
+                Vehicles</a>
             <a href="../modules/parking/index.php">Find Parking</a>
             <a href="../modules/booking/index.php">My Bookings</a>
             <a href="Student.php?view=profile" <?php echo $current_view === 'profile' ? 'class="active"' : ''; ?>>Profile</a>
@@ -254,232 +258,249 @@ closeDBConnection($conn);
 
     <div class="container">
         <?php if ($current_view === 'dashboard'): ?>
-        <!-- Dashboard View -->
-        <div class="dashboard-welcome">
-            <h2>Welcome Back, <?php echo htmlspecialchars($username); ?>!</h2>
-            <p>Manage your parking experience with Mawgifi</p>
-        </div>
-
-        <div class="modules-grid">
-            <a href="Student.php?view=vehicles" class="module-card m1">
-                <div class="module-icon">🚗</div>
-                <h3>My Vehicles</h3>
-                <p>Register and manage your vehicles for parking access.</p>
-            </a>
-
-            <a href="../modules/parking/index.php" class="module-card m2">
-                <div class="module-icon">🅿️</div>
-                <h3>Find Parking</h3>
-                <p>Search for available parking spaces near you.</p>
-            </a>
-
-            <a href="../modules/booking/index.php" class="module-card m3">
-                <div class="module-icon">📅</div>
-                <h3>My Bookings</h3>
-                <p>View and manage your parking reservations.</p>
-            </a>
-        </div>
-
-        <!-- Quick Stats -->
-        <div class="stats-section">
-            <div class="stat-card">
-                <div class="stat-number"><?php echo count($vehicles); ?></div>
-                <div class="stat-label">Registered Vehicles</div>
+            <!-- Dashboard View -->
+            <div class="dashboard-welcome">
+                <h2>Welcome Back, <?php echo htmlspecialchars($username); ?>!</h2>
+                <p>Manage your parking experience with Mawgifi</p>
             </div>
-            <div class="stat-card">
-                <div class="stat-number"><?php 
+
+            <div class="modules-grid">
+                <a href="Student.php?view=vehicles" class="module-card m1">
+                    <div class="module-icon">🚗</div>
+                    <h3>My Vehicles</h3>
+                    <p>Register and manage your vehicles for parking access.</p>
+                </a>
+
+                <a href="../modules/parking/index.php" class="module-card m2">
+                    <div class="module-icon">🅿️</div>
+                    <h3>Find Parking</h3>
+                    <p>Search for available parking spaces near you.</p>
+                </a>
+
+                <a href="../modules/booking/index.php" class="module-card m3">
+                    <div class="module-icon">📅</div>
+                    <h3>My Bookings</h3>
+                    <p>View and manage your parking reservations.</p>
+                </a>
+            </div>
+
+            <!-- Quick Stats -->
+            <div class="stats-section">
+                <div class="stat-card">
+                    <div class="stat-number"><?php echo count($vehicles); ?></div>
+                    <div class="stat-label">Registered Vehicles</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number"><?php
                     $approved = 0;
                     foreach ($vehicles as $v) {
-                        if ($v['status'] === 'approved') $approved++;
+                        if ($v['status'] === 'approved')
+                            $approved++;
                     }
                     echo $approved;
-                ?></div>
-                <div class="stat-label">Approved Vehicles</div>
-            </div>
-            <div class="stat-card">
-                <div class="stat-number"><?php 
+                    ?></div>
+                    <div class="stat-label">Approved Vehicles</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number"><?php
                     $pending = 0;
                     foreach ($vehicles as $v) {
-                        if ($v['status'] === 'pending') $pending++;
+                        if ($v['status'] === 'pending')
+                            $pending++;
                     }
                     echo $pending;
-                ?></div>
-                <div class="stat-label">Pending Approval</div>
+                    ?></div>
+                    <div class="stat-label">Pending Approval</div>
+                </div>
             </div>
-        </div>
 
         <?php elseif ($current_view === 'profile'): ?>
-        <!-- Profile View -->
-        <div class="module-header">
-            <h1>👤 My Profile</h1>
-            <p>Update your personal information</p>
-        </div>
-
-        <div class="content-area">
-            <?php if ($error_message): ?>
-                <div class="alert alert-error"><?php echo htmlspecialchars($error_message); ?></div>
-            <?php endif; ?>
-
-            <?php if ($success_message): ?>
-                <div class="alert alert-success"><?php echo htmlspecialchars($success_message); ?></div>
-            <?php endif; ?>
-
-            <div class="form-section">
-                <h2>Personal Information</h2>
-                <form method="POST" action="">
-                    <div class="form-row">
-                        <div class="form-group">
-                            <label for="username">Username</label>
-                            <input type="text" id="username" name="username" value="<?php echo htmlspecialchars($user_data['UserName'] ?? ''); ?>" required>
-                        </div>
-
-                        <div class="form-group">
-                            <label for="email">Email Address</label>
-                            <input type="email" id="email" name="email" value="<?php echo htmlspecialchars($user_data['Email'] ?? ''); ?>" required>
-                        </div>
-                    </div>
-
-                    <div class="form-row">
-                        <div class="form-group">
-                            <label for="phone">Phone Number</label>
-                            <input type="text" id="phone" name="phone" value="<?php echo htmlspecialchars($user_data['PhoneNumber'] ?? ''); ?>" placeholder="Enter phone number">
-                        </div>
-                    </div>
-
-                    <h2 style="margin-top: 30px;">Change Password</h2>
-                    <p style="color: var(--text-light); margin-bottom: 20px;">Leave blank to keep current password</p>
-
-                    <div class="form-row">
-                        <div class="form-group">
-                            <label for="password">New Password</label>
-                            <input type="password" id="password" name="password" placeholder="Enter new password">
-                        </div>
-
-                        <div class="form-group">
-                            <label for="confirm_password">Confirm Password</label>
-                            <input type="password" id="confirm_password" name="confirm_password" placeholder="Confirm new password">
-                        </div>
-                    </div>
-
-                    <button type="submit" name="update_profile" class="btn">Update Profile</button>
-                </form>
+            <!-- Profile View -->
+            <div class="module-header">
+                <h1>👤 My Profile</h1>
+                <p>Update your personal information</p>
             </div>
-        </div>
+
+            <div class="content-area">
+                <?php if ($error_message): ?>
+                    <div class="alert alert-error"><?php echo htmlspecialchars($error_message); ?></div>
+                <?php endif; ?>
+
+                <?php if ($success_message): ?>
+                    <div class="alert alert-success"><?php echo htmlspecialchars($success_message); ?></div>
+                <?php endif; ?>
+
+                <div class="form-section">
+                    <h2>Personal Information</h2>
+                    <form method="POST" action="">
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="username">Username</label>
+                                <input type="text" id="username" name="username"
+                                    value="<?php echo htmlspecialchars($user_data['UserName'] ?? ''); ?>" required>
+                            </div>
+
+                            <div class="form-group">
+                                <label for="email">Email Address</label>
+                                <input type="email" id="email" name="email"
+                                    value="<?php echo htmlspecialchars($user_data['Email'] ?? ''); ?>" required>
+                            </div>
+                        </div>
+
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="phone">Phone Number</label>
+                                <input type="text" id="phone" name="phone"
+                                    value="<?php echo htmlspecialchars($user_data['PhoneNumber'] ?? ''); ?>"
+                                    placeholder="Enter phone number">
+                            </div>
+                        </div>
+
+                        <h2 style="margin-top: 30px;">Change Password</h2>
+                        <p style="color: var(--text-light); margin-bottom: 20px;">Leave blank to keep current password</p>
+
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="password">New Password</label>
+                                <input type="password" id="password" name="password" placeholder="Enter new password">
+                            </div>
+
+                            <div class="form-group">
+                                <label for="confirm_password">Confirm Password</label>
+                                <input type="password" id="confirm_password" name="confirm_password"
+                                    placeholder="Confirm new password">
+                            </div>
+                        </div>
+
+                        <button type="submit" name="update_profile" class="btn">Update Profile</button>
+                    </form>
+                </div>
+            </div>
 
         <?php else: ?>
-        <!-- Vehicles View -->
-        <div class="module-header">
-            <h1>My Vehicles</h1>
-            <p>Register and manage your vehicles</p>
-        </div>
-
-        <div class="content-area">
-            <?php if ($error_message): ?>
-                <div class="alert alert-error"><?php echo htmlspecialchars($error_message); ?></div>
-            <?php endif; ?>
-
-            <?php if ($success_message): ?>
-                <div class="alert alert-success"><?php echo htmlspecialchars($success_message); ?></div>
-            <?php endif; ?>
-
-            <!-- Add Vehicle Form -->
-            <div class="form-section">
-                <h2>Register New Vehicle</h2>
-                <form method="POST" action="" enctype="multipart/form-data">
-                    <div class="form-row">
-                        <div class="form-group">
-                            <label for="vehicle_type">Vehicle Type</label>
-                            <select id="vehicle_type" name="vehicle_type" required>
-                                <option value="">Select Type</option>
-                                <option value="Car">Car</option>
-                                <option value="Motorcycle">Motorcycle</option>
-                                <option value="SUV">SUV</option>
-                                <option value="Van">Van</option>
-                            </select>
-                        </div>
-
-                        <div class="form-group">
-                            <label for="vehicle_model">Vehicle Model</label>
-                            <input type="text" id="vehicle_model" name="vehicle_model" placeholder="e.g. Toyota Camry" required>
-                        </div>
-
-                        <div class="form-group">
-                            <label for="license_plate">License Plate</label>
-                            <input type="text" id="license_plate" name="license_plate" placeholder="e.g. ABC1234" required>
-                        </div>
-                    </div>
-
-                    <div class="form-row">
-                        <div class="form-group">
-                            <label for="vehicle_grant">Vehicle Grant (PDF, JPG, PNG, DOC)</label>
-                            <input type="file" id="vehicle_grant" name="vehicle_grant" accept=".pdf,.jpg,.jpeg,.png,.doc,.docx">
-                        </div>
-                    </div>
-
-                    <button type="submit" name="add_vehicle" class="btn">Register Vehicle</button>
-                </form>
+            <!-- Vehicles View -->
+            <div class="module-header">
+                <h1>My Vehicles</h1>
+                <p>Register and manage your vehicles</p>
             </div>
 
-            <!-- Vehicles List -->
-            <div class="vehicles-section">
-                <h2>My Registered Vehicles</h2>
-
-                <?php if (empty($vehicles)): ?>
-                    <div class="no-vehicles">
-                        <p>You haven't registered any vehicles yet.</p>
-                    </div>
-                <?php else: ?>
-                    <table class="vehicles-table">
-                        <thead>
-                            <tr>
-                                <th>Type</th>
-                                <th>Model</th>
-                                <th>License Plate</th>
-                                <th>Registered On</th>
-                                <th>Status</th>
-                                <th>Action</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <?php foreach ($vehicles as $vehicle): ?>
-                                <tr>
-                                    <td><?php echo htmlspecialchars($vehicle['vehicle_type']); ?></td>
-                                    <td><?php echo htmlspecialchars($vehicle['vehicle_model']); ?></td>
-                                    <td><strong><?php echo htmlspecialchars($vehicle['license_plate']); ?></strong></td>
-                                    <td><?php echo date('M d, Y', strtotime($vehicle['created_at'])); ?></td>
-                                    <td>
-                                        <?php if ($vehicle['status'] === 'approved'): ?>
-                                            <span class="status-badge status-approved">Approved</span>
-                                        <?php elseif ($vehicle['status'] === 'rejected'): ?>
-                                            <span class="status-badge status-rejected">Rejected</span>
-                                        <?php else: ?>
-                                            <span class="status-badge status-pending">Pending</span>
-                                        <?php endif; ?>
-                                    </td>
-                                    <td>
-                                        <button type="button" class="btn btn-edit" onclick="openEditModal(<?php echo $vehicle['vehicle_id']; ?>, '<?php echo htmlspecialchars($vehicle['vehicle_type'], ENT_QUOTES); ?>', '<?php echo htmlspecialchars($vehicle['vehicle_model'], ENT_QUOTES); ?>', '<?php echo htmlspecialchars($vehicle['license_plate'], ENT_QUOTES); ?>', '<?php echo htmlspecialchars($vehicle['grant_document'] ?? '', ENT_QUOTES); ?>')">Edit</button>
-                                        <?php if ($vehicle['status'] === 'rejected' && !empty($vehicle['rejection_reason'])): ?>
-                                            <button type="button" class="btn btn-reason" onclick="openReasonModal('<?php echo htmlspecialchars($vehicle['rejection_reason'], ENT_QUOTES); ?>')">Reason</button>
-                                        <?php endif; ?>
-                                        <form method="POST" action="" style="display: inline;" onsubmit="return confirm('Are you sure you want to delete this vehicle?');">
-                                            <input type="hidden" name="vehicle_id" value="<?php echo $vehicle['vehicle_id']; ?>">
-                                            <button type="submit" name="delete_vehicle" class="btn btn-danger">Delete</button>
-                                        </form>
-                                    </td>
-                                </tr>
-                            <?php endforeach; ?>
-                        </tbody>
-                    </table>
+            <div class="content-area">
+                <?php if ($error_message): ?>
+                    <div class="alert alert-error"><?php echo htmlspecialchars($error_message); ?></div>
                 <?php endif; ?>
+
+                <?php if ($success_message): ?>
+                    <div class="alert alert-success"><?php echo htmlspecialchars($success_message); ?></div>
+                <?php endif; ?>
+
+                <!-- Add Vehicle Form -->
+                <div class="form-section">
+                    <h2>Register New Vehicle</h2>
+                    <form method="POST" action="" enctype="multipart/form-data">
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="vehicle_type">Vehicle Type</label>
+                                <select id="vehicle_type" name="vehicle_type" required>
+                                    <option value="">Select Type</option>
+                                    <option value="Car">Car</option>
+                                    <option value="Motorcycle">Motorcycle</option>
+                                    <option value="SUV">SUV</option>
+                                    <option value="Van">Van</option>
+                                </select>
+                            </div>
+
+                            <div class="form-group">
+                                <label for="vehicle_model">Vehicle Model</label>
+                                <input type="text" id="vehicle_model" name="vehicle_model" placeholder="e.g. Toyota Camry"
+                                    required>
+                            </div>
+
+                            <div class="form-group">
+                                <label for="license_plate">License Plate</label>
+                                <input type="text" id="license_plate" name="license_plate" placeholder="e.g. ABC1234"
+                                    required>
+                            </div>
+                        </div>
+
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="vehicle_grant">Vehicle Grant (PDF, JPG, PNG, DOC)</label>
+                                <input type="file" id="vehicle_grant" name="vehicle_grant"
+                                    accept=".pdf,.jpg,.jpeg,.png,.doc,.docx">
+                            </div>
+                        </div>
+
+                        <button type="submit" name="add_vehicle" class="btn">Register Vehicle</button>
+                    </form>
+                </div>
+
+                <!-- Vehicles List -->
+                <div class="vehicles-section">
+                    <h2>My Registered Vehicles</h2>
+
+                    <?php if (empty($vehicles)): ?>
+                        <div class="no-vehicles">
+                            <p>You haven't registered any vehicles yet.</p>
+                        </div>
+                    <?php else: ?>
+                        <table class="vehicles-table">
+                            <thead>
+                                <tr>
+                                    <th>Type</th>
+                                    <th>Model</th>
+                                    <th>License Plate</th>
+                                    <th>Registered On</th>
+                                    <th>Status</th>
+                                    <th>Action</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <?php foreach ($vehicles as $vehicle): ?>
+                                    <tr>
+                                        <td><?php echo htmlspecialchars($vehicle['vehicle_type']); ?></td>
+                                        <td><?php echo htmlspecialchars($vehicle['vehicle_model']); ?></td>
+                                        <td><strong><?php echo htmlspecialchars($vehicle['license_plate']); ?></strong></td>
+                                        <td><?php echo date('M d, Y', strtotime($vehicle['created_at'])); ?></td>
+                                        <td>
+                                            <?php if ($vehicle['status'] === 'approved'): ?>
+                                                <span class="status-badge status-approved">Approved</span>
+                                            <?php elseif ($vehicle['status'] === 'rejected'): ?>
+                                                <span class="status-badge status-rejected">Rejected</span>
+                                            <?php else: ?>
+                                                <span class="status-badge status-pending">Pending</span>
+                                            <?php endif; ?>
+                                        </td>
+                                        <td>
+                                            <button type="button" class="btn btn-edit"
+                                                onclick="openEditModal(<?php echo $vehicle['vehicle_id']; ?>, '<?php echo htmlspecialchars($vehicle['vehicle_type'], ENT_QUOTES); ?>', '<?php echo htmlspecialchars($vehicle['vehicle_model'], ENT_QUOTES); ?>', '<?php echo htmlspecialchars($vehicle['license_plate'], ENT_QUOTES); ?>', '<?php echo htmlspecialchars($vehicle['grant_document'] ?? '', ENT_QUOTES); ?>')">Edit</button>
+                                            <?php if ($vehicle['status'] === 'rejected' && !empty($vehicle['rejection_reason'])): ?>
+                                                <button type="button" class="btn btn-reason"
+                                                    onclick="openReasonModal('<?php echo htmlspecialchars($vehicle['rejection_reason'], ENT_QUOTES); ?>')">Reason</button>
+                                            <?php endif; ?>
+                                            <form method="POST" action="" style="display: inline;"
+                                                onsubmit="return confirm('Are you sure you want to delete this vehicle?');">
+                                                <input type="hidden" name="vehicle_id"
+                                                    value="<?php echo $vehicle['vehicle_id']; ?>">
+                                                <button type="submit" name="delete_vehicle" class="btn btn-danger">Delete</button>
+                                            </form>
+                                        </td>
+                                    </tr>
+                                <?php endforeach; ?>
+                            </tbody>
+                        </table>
+                    <?php endif; ?>
+                </div>
             </div>
-        </div>
         <?php endif; ?>
     </div>
 
     <!-- Reason Modal -->
-    <div id="reasonModal" class="modal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 1000; justify-content: center; align-items: center;">
-        <div class="modal-content" style="background: white; padding: 30px; border-radius: 12px; max-width: 500px; width: 90%; position: relative;">
-            <span class="close-modal" onclick="closeReasonModal()" style="position: absolute; top: 15px; right: 20px; font-size: 24px; cursor: pointer; color: #666;">&times;</span>
+    <div id="reasonModal" class="modal"
+        style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 1000; justify-content: center; align-items: center;">
+        <div class="modal-content"
+            style="background: white; padding: 30px; border-radius: 12px; max-width: 500px; width: 90%; position: relative;">
+            <span class="close-modal" onclick="closeReasonModal()"
+                style="position: absolute; top: 15px; right: 20px; font-size: 24px; cursor: pointer; color: #666;">&times;</span>
             <h2 style="margin-bottom: 20px; color: #e53e3e;">Rejection Reason</h2>
             <p id="rejectionReasonText" style="color: #333; line-height: 1.6;"></p>
             <div style="display: flex; gap: 10px; justify-content: flex-end; margin-top: 20px;">
@@ -489,16 +510,21 @@ closeDBConnection($conn);
     </div>
 
     <!-- Edit Vehicle Modal -->
-    <div id="editVehicleModal" class="modal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 1000; justify-content: center; align-items: center;">
-        <div class="modal-content" style="background: white; padding: 30px; border-radius: 12px; max-width: 500px; width: 90%; position: relative;">
-            <span class="close-modal" onclick="closeEditModal()" style="position: absolute; top: 15px; right: 20px; font-size: 24px; cursor: pointer; color: #666;">&times;</span>
+    <div id="editVehicleModal" class="modal"
+        style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 1000; justify-content: center; align-items: center;">
+        <div class="modal-content"
+            style="background: white; padding: 30px; border-radius: 12px; max-width: 500px; width: 90%; position: relative;">
+            <span class="close-modal" onclick="closeEditModal()"
+                style="position: absolute; top: 15px; right: 20px; font-size: 24px; cursor: pointer; color: #666;">&times;</span>
             <h2 style="margin-bottom: 20px; color: #333;">Edit Vehicle</h2>
             <form method="POST" action="" enctype="multipart/form-data">
                 <input type="hidden" id="edit_vehicle_id" name="edit_vehicle_id">
-                
+
                 <div class="form-group" style="margin-bottom: 20px;">
-                    <label for="edit_vehicle_type" style="display: block; margin-bottom: 8px; font-weight: 500;">Vehicle Type</label>
-                    <select id="edit_vehicle_type" name="edit_vehicle_type" required style="width: 100%; padding: 12px; border: 2px solid #e0e0e0; border-radius: 8px; font-size: 14px;">
+                    <label for="edit_vehicle_type" style="display: block; margin-bottom: 8px; font-weight: 500;">Vehicle
+                        Type</label>
+                    <select id="edit_vehicle_type" name="edit_vehicle_type" required
+                        style="width: 100%; padding: 12px; border: 2px solid #e0e0e0; border-radius: 8px; font-size: 14px;">
                         <option value="Car">Car</option>
                         <option value="Motorcycle">Motorcycle</option>
                         <option value="SUV">SUV</option>
@@ -507,23 +533,32 @@ closeDBConnection($conn);
                 </div>
 
                 <div class="form-group" style="margin-bottom: 20px;">
-                    <label for="edit_vehicle_model" style="display: block; margin-bottom: 8px; font-weight: 500;">Vehicle Model</label>
-                    <input type="text" id="edit_vehicle_model" name="edit_vehicle_model" required style="width: 100%; padding: 12px; border: 2px solid #e0e0e0; border-radius: 8px; font-size: 14px;">
+                    <label for="edit_vehicle_model"
+                        style="display: block; margin-bottom: 8px; font-weight: 500;">Vehicle Model</label>
+                    <input type="text" id="edit_vehicle_model" name="edit_vehicle_model" required
+                        style="width: 100%; padding: 12px; border: 2px solid #e0e0e0; border-radius: 8px; font-size: 14px;">
                 </div>
 
                 <div class="form-group" style="margin-bottom: 20px;">
-                    <label for="edit_license_plate" style="display: block; margin-bottom: 8px; font-weight: 500;">License Plate</label>
-                    <input type="text" id="edit_license_plate" name="edit_license_plate" required style="width: 100%; padding: 12px; border: 2px solid #e0e0e0; border-radius: 8px; font-size: 14px;">
+                    <label for="edit_license_plate"
+                        style="display: block; margin-bottom: 8px; font-weight: 500;">License Plate</label>
+                    <input type="text" id="edit_license_plate" name="edit_license_plate" required
+                        style="width: 100%; padding: 12px; border: 2px solid #e0e0e0; border-radius: 8px; font-size: 14px;">
                 </div>
 
                 <div class="form-group" style="margin-bottom: 20px;">
-                    <label for="edit_vehicle_grant" style="display: block; margin-bottom: 8px; font-weight: 500;">Vehicle Grant (PDF, JPG, PNG, DOC)</label>
-                    <input type="file" id="edit_vehicle_grant" name="edit_vehicle_grant" accept=".pdf,.jpg,.jpeg,.png,.doc,.docx" style="width: 100%; padding: 12px; border: 2px solid #e0e0e0; border-radius: 8px; font-size: 14px;">
+                    <label for="edit_vehicle_grant"
+                        style="display: block; margin-bottom: 8px; font-weight: 500;">Vehicle Grant (PDF, JPG, PNG,
+                        DOC)</label>
+                    <input type="file" id="edit_vehicle_grant" name="edit_vehicle_grant"
+                        accept=".pdf,.jpg,.jpeg,.png,.doc,.docx"
+                        style="width: 100%; padding: 12px; border: 2px solid #e0e0e0; border-radius: 8px; font-size: 14px;">
                     <p id="current_grant_info" style="margin-top: 8px; font-size: 12px; color: #666;"></p>
                 </div>
 
                 <div style="display: flex; gap: 10px; justify-content: flex-end;">
-                    <button type="button" onclick="closeEditModal()" class="btn" style="background: #6c757d;">Cancel</button>
+                    <button type="button" onclick="closeEditModal()" class="btn"
+                        style="background: #6c757d;">Cancel</button>
                     <button type="submit" name="edit_vehicle" class="btn">Save Changes</button>
                 </div>
             </form>
@@ -536,14 +571,14 @@ closeDBConnection($conn);
             document.getElementById('edit_vehicle_type').value = vehicleType;
             document.getElementById('edit_vehicle_model').value = vehicleModel;
             document.getElementById('edit_license_plate').value = licensePlate;
-            
+
             var grantInfo = document.getElementById('current_grant_info');
             if (grantDocument && grantDocument !== '') {
                 grantInfo.innerHTML = 'Current file: <a href="../' + grantDocument + '" target="_blank" style="color: #667eea;">View Document</a> (Upload new file to replace)';
             } else {
                 grantInfo.textContent = 'No file uploaded yet';
             }
-            
+
             document.getElementById('editVehicleModal').style.display = 'flex';
         }
 
@@ -561,7 +596,7 @@ closeDBConnection($conn);
         }
 
         // Close modal when clicking outside
-        window.onclick = function(event) {
+        window.onclick = function (event) {
             var editModal = document.getElementById('editVehicleModal');
             var reasonModal = document.getElementById('reasonModal');
             if (event.target === editModal) {

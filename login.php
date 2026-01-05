@@ -52,7 +52,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['login'])) {
                 $_SESSION['username'] = $user['UserName'];
                 $_SESSION['email'] = $user['Email'];
                 $_SESSION['user_type'] = $user['UserType'];
-                $_SESSION['login_time'] = time();
+
 
                 // Redirect to custom URL if provided
                 if ($redirect_url) {
@@ -292,15 +292,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['reset'])) {
             <form method="POST" action="">
                 <div class="form-group">
                     <label for="email">Email Address</label>
-                    <input type="email" id="email" name="email" required
-                        placeholder="Enter your email"
+                    <input type="email" id="email" name="email" required placeholder="Enter your email"
                         value="<?php echo isset($_POST['email']) ? htmlspecialchars($_POST['email']) : ''; ?>">
                 </div>
 
                 <div class="form-group">
                     <label for="new_password">New Password</label>
-                    <input type="password" id="new_password" name="new_password" required
-                        placeholder="Enter new password">
+                    <input type="password" id="new_password" name="new_password" required placeholder="Enter new password">
                 </div>
 
                 <div class="form-group">
@@ -321,15 +319,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['reset'])) {
                 <input type="hidden" name="redirect" value="<?php echo htmlspecialchars($redirect_url); ?>">
                 <div class="form-group">
                     <label for="email">Email Address</label>
-                    <input type="email" id="email" name="email" required
-                        placeholder="Enter your email"
+                    <input type="email" id="email" name="email" required placeholder="Enter your email"
                         value="<?php echo isset($_POST['email']) ? htmlspecialchars($_POST['email']) : ''; ?>">
                 </div>
 
                 <div class="form-group">
                     <label for="password">Password</label>
-                    <input type="password" id="password" name="password" required
-                        placeholder="Enter your password">
+                    <input type="password" id="password" name="password" required placeholder="Enter your password">
                 </div>
 
                 <button type="submit" name="login" class="btn">Login</button>

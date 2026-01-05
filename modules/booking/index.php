@@ -42,7 +42,7 @@ if ($is_admin_or_staff) {
          JOIN ParkingSpace ps ON b.Space_id = ps.Space_id
          LEFT JOIN ParkingArea pa ON ps.area_id = pa.area_id
          JOIN Vehicle v ON b.vehicle_id = v.vehicle_id
-         WHERE v.user_id = ? ORDER BY b.booking_start DESC"
+         WHERE v.user_id = ? AND b.booking_end >= NOW() ORDER BY b.booking_start ASC"
     );
     $stmt->bind_param("i", $user_id);
 }
@@ -482,6 +482,7 @@ $conn->close();
                 <a href="../../admin/parking_management.php">Manage Parking</a>
                 <a href="../../admin/event_management.php">Events</a>
                 <a href="index.php" class="active">Bookings</a>
+                <a href="../../Moudel1/Admin.php?view=reports">Reports</a>
                 <a href="../../Moudel1/Admin.php?view=register">Register Student</a>
                 <a href="../../Moudel1/Admin.php?view=manage">Manage Profile</a>
                 <a href="../../Moudel1/Admin.php?view=profile">Profile</a>

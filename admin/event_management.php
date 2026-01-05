@@ -535,6 +535,7 @@ $username = $_SESSION['username'] ?? 'Administrator';
             <a href="parking_management.php">Manage Parking</a>
             <a href="event_management.php" class="active">Events</a>
             <a href="../modules/booking/index.php">Bookings</a>
+            <a href="../Moudel1/Admin.php?view=reports">Reports</a>
             <a href="../Moudel1/Admin.php?view=register">Register Student</a>
             <a href="../Moudel1/Admin.php?view=manage">Manage Profile</a>
             <a href="../Moudel1/Admin.php?view=profile">Profile</a>
@@ -592,7 +593,8 @@ $username = $_SESSION['username'] ?? 'Administrator';
 
                     <div class="form-group">
                         <label for="event_name">Event Name *</label>
-                        <input type="text" id="event_name" name="event_name" required placeholder="e.g., Monthly Lawn Maintenance">
+                        <input type="text" id="event_name" name="event_name" required
+                            placeholder="e.g., Monthly Lawn Maintenance">
                     </div>
 
                     <div class="form-row">
@@ -618,7 +620,8 @@ $username = $_SESSION['username'] ?? 'Administrator';
                             <select id="area_id" name="area_id">
                                 <option value="">No Area Closure</option>
                             </select>
-                            <small style="color: #718096; display: block; margin-top: 5px;">Area will be closed during event</small>
+                            <small style="color: #718096; display: block; margin-top: 5px;">Area will be closed during
+                                event</small>
                         </div>
                     </div>
 
@@ -630,13 +633,15 @@ $username = $_SESSION['username'] ?? 'Administrator';
 
                         <div class="form-group">
                             <label for="duration_minutes">Duration (minutes) *</label>
-                            <input type="number" id="duration_minutes" name="duration_minutes" required min="1" placeholder="e.g., 120">
+                            <input type="number" id="duration_minutes" name="duration_minutes" required min="1"
+                                placeholder="e.g., 120">
                         </div>
                     </div>
 
                     <div class="form-group">
                         <label for="RecordReport">Event Report / Notes</label>
-                        <textarea id="RecordReport" name="RecordReport" placeholder="Add any notes, observations, or details about this event..."></textarea>
+                        <textarea id="RecordReport" name="RecordReport"
+                            placeholder="Add any notes, observations, or details about this event..."></textarea>
                     </div>
                 </div>
 
@@ -650,10 +655,10 @@ $username = $_SESSION['username'] ?? 'Administrator';
 
     <script>
         // Load events on page load
-        document.addEventListener('DOMContentLoaded', function() {
+        document.addEventListener('DOMContentLoaded', function () {
             loadEvents();
             loadAreas();
-            
+
             // Auto-open modal if action=new in URL
             const urlParams = new URLSearchParams(window.location.search);
             if (urlParams.get('action') === 'new') {
@@ -815,7 +820,7 @@ $username = $_SESSION['username'] ?? 'Administrator';
             const type = eventId ? 'update' : 'create';
 
             formData.append('type', type);
-            
+
             // Debug: Log what's being sent
             console.log('Submitting event form:');
             console.log('Event ID:', eventId);
@@ -826,9 +831,9 @@ $username = $_SESSION['username'] ?? 'Administrator';
             }
 
             fetch('event_api.php', {
-                    method: 'POST',
-                    body: formData
-                })
+                method: 'POST',
+                body: formData
+            })
                 .then(response => response.json())
                 .then(data => {
                     console.log('API Response:', data);
@@ -853,12 +858,12 @@ $username = $_SESSION['username'] ?? 'Administrator';
             }
 
             fetch('event_api.php', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/x-www-form-urlencoded',
-                    },
-                    body: `type=delete&event_id=${eventId}`
-                })
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                },
+                body: `type=delete&event_id=${eventId}`
+            })
                 .then(response => response.json())
                 .then(data => {
                     if (data.success) {
@@ -909,7 +914,7 @@ $username = $_SESSION['username'] ?? 'Administrator';
         }
 
         // Close modal when clicking outside
-        window.onclick = function(event) {
+        window.onclick = function (event) {
             const modal = document.getElementById('eventModal');
             if (event.target === modal) {
                 closeEventModal();
