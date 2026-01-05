@@ -5,8 +5,8 @@
  * Adds area_color and area_status columns to ParkingArea table
  */
 
-require_once '../../config/database.php';
-require_once '../../config/session.php';
+require_once '../config/database.php';
+require_once '../config/session.php';
 
 // Require admin access
 requireAdmin();

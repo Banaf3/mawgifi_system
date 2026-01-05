@@ -776,15 +776,14 @@ $conn->close();
                     </div>
 
                     <div class="form-group">
-                        <label for="space_availability">Availability</label>
-                        <select id="space_availability" name="availability_id">
-                            <option value="">-- Select Availability --</option>
-                            <?php foreach ($availabilities as $av): ?>
-                                <option value="<?php echo $av['Availability_id']; ?>">
-                                    <?php echo $av['date'] . ' (' . $av['status'] . ')'; ?>
-                                </option>
-                            <?php endforeach; ?>
+                        <label for="status">Status</label>
+                        <select id="status" name="status">
+                            <option value="available">Available</option>
+                            <option value="occupied">Occupied</option>
+                            <option value="reserved">Reserved</option>
+                            <option value="maintenance">Maintenance</option>
                         </select>
+                        <small style="color: #718096;">Space status - shows RED on map when not available</small>
                     </div>
                 </div>
                 <div class="modal-footer">
@@ -994,7 +993,7 @@ $conn->close();
             document.getElementById('space_area_id').value = space.area_id;
             document.getElementById('space_number').value = space.space_number;
             document.getElementById('qr_code').value = space.qr_code || '';
-            document.getElementById('space_availability').value = space.Availability_id || '';
+            document.getElementById('status').value = space.status || 'available';
             
             // Generate and show QR code preview
             const baseUrl = window.location.origin + '/mawgifi_system';

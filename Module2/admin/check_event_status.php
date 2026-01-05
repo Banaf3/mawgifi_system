@@ -4,7 +4,7 @@
  * This should be included before displaying parking areas
  */
 
-require_once __DIR__ . '/../../config/database.php';
+require_once __DIR__ . '/../config/database.php';
 
 function updateAreaStatusBasedOnEvents() {
     $conn = getDBConnection();

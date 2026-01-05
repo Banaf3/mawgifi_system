@@ -80,9 +80,8 @@ if ($conn) {
         }
     }
 
-    // Query 2: Get all existing parking spaces from database
-    // Check if area_color and area_status columns exist
-    $space_sql = "SELECT ps.space_number, ps.Space_id, pa.area_name";
+    // Query 2: Get all existing parking spaces from database with their status
+    $space_sql = "SELECT ps.space_number, ps.Space_id, ps.status, pa.area_name";
     if ($has_color_column) {
         $space_sql .= ", pa.area_color";
     }
@@ -109,12 +108,13 @@ if ($conn) {
             
             if ($slot_number !== null) {
                 $available_spaces[] = $slot_number;
-                // Store mapping from slot number to area data
+                // Store mapping from slot number to area data including space status
                 $area_slot_mapping[$slot_number] = [
                     'space_id' => $space_row['Space_id'],
                     'area_name' => $space_row['area_name'],
                     'area_color' => isset($space_row['area_color']) ? $space_row['area_color'] : '#a0a0a0',
                     'area_status' => isset($space_row['area_status']) ? $space_row['area_status'] : 'available',
+                    'status' => isset($space_row['status']) ? $space_row['status'] : 'available',
                     'space_number' => $space_num
                 ];
             }
@@ -804,6 +804,7 @@ $conn->close();
                         code: 'DB',
                         color: mapping.area_color,
                         status: mapping.area_status,
+                        spaceStatus: mapping.status || 'available',
                         name: mapping.area_name,
                         exists: true
                     };
@@ -869,6 +870,15 @@ $conn->close();
                 if (areaInfo.status && ['occupied', 'temporarily_closed', 'under_maintenance'].includes(areaInfo.status)) {
                     slot.classList.add('area-closed');
                     slot.setAttribute('fill', '#f56565'); // Red for closed/occupied areas
+                    slot.style.cursor = 'not-allowed';
+                    slot.style.pointerEvents = 'none';
+                    return; // Skip further processing
+                }
+
+                // Check individual space status - if NOT available, show as RED
+                if (areaInfo.spaceStatus && areaInfo.spaceStatus !== 'available') {
+                    slot.classList.add('space-unavailable');
+                    slot.setAttribute('fill', '#f56565'); // Red for occupied/reserved/maintenance
                     slot.style.cursor = 'not-allowed';
                     slot.style.pointerEvents = 'none';
                     return; // Skip further processing

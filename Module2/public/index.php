@@ -80,41 +80,34 @@ if ($conn) {
         }
     }
 
-    // Query 2: Get all existing parking spaces from database
-    // Check if area_color and area_status columns exist
-    $space_sql = "SELECT ps.space_number, ps.Space_id, pa.area_name";
-    if ($has_color_column) {
-        $space_sql .= ", pa.area_color";
-    }
-    if ($has_status_column) {
-        $space_sql .= ", pa.area_status";
-    }
-    $space_sql .= " FROM ParkingSpace ps JOIN ParkingArea pa ON ps.area_id = pa.area_id";
+    // Query 2: Get all parking spaces with their status
+    $space_sql = "SELECT ps.space_number, ps.Space_id, ps.status, pa.area_name, pa.area_color, pa.area_status
+                  FROM ParkingSpace ps 
+                  JOIN ParkingArea pa ON ps.area_id = pa.area_id";
     
     $space_result = $conn->query($space_sql);
     if ($space_result) {
         while ($space_row = $space_result->fetch_assoc()) {
-            // Extract slot number from space_number
-            // Format can be "A-01", "A-1", "1", "01", etc.
+            // Parse space number - can be "A-01", "1", "01", etc.
             $space_num = $space_row['space_number'];
             $slot_number = null;
             
-            if (preg_match('/[A-E]-(\d+)/i', $space_num, $matches)) {
-                // Format: A-01, B-15, etc.
+            // Try to extract number from formats like "A-01", "B-15"
+            if (preg_match('/[A-Z]-(\d+)/i', $space_num, $matches)) {
                 $slot_number = (int) $matches[1];
-            } elseif (preg_match('/^(\d+)$/', $space_num, $matches)) {
-                // Format: just a number like "1", "15"
-                $slot_number = (int) $matches[1];
+            } elseif (is_numeric($space_num)) {
+                $slot_number = (int) $space_num;
             }
             
-            if ($slot_number !== null) {
+            if ($slot_number !== null && $slot_number > 0 && $slot_number <= 100) {
                 $available_spaces[] = $slot_number;
-                // Store mapping from slot number to area data
+                // Store mapping from slot number to data
                 $area_slot_mapping[$slot_number] = [
                     'space_id' => $space_row['Space_id'],
                     'area_name' => $space_row['area_name'],
-                    'area_color' => isset($space_row['area_color']) ? $space_row['area_color'] : '#a0a0a0',
-                    'area_status' => isset($space_row['area_status']) ? $space_row['area_status'] : 'available',
+                    'area_color' => $space_row['area_color'] ?? '#a0a0a0',
+                    'area_status' => $space_row['area_status'] ?? 'available',
+                    'status' => $space_row['status'] ?? 'available',
                     'space_number' => $space_num
                 ];
             }
@@ -792,6 +785,10 @@ $conn->close();
             // Mapping of slot numbers to their area data from database
             const slotAreaMapping = <?php echo json_encode($area_slot_mapping); ?>;
 
+            // Debug: Log slot mapping for slot 1
+            console.log('Slot 1 mapping:', slotAreaMapping[1]);
+            console.log('Full mapping:', slotAreaMapping);
+
             // Array of available space numbers from database (spaces that exist)
             const availableSpaces = <?php echo json_encode($available_spaces); ?>;
 
@@ -804,6 +801,7 @@ $conn->close();
                         code: 'DB',
                         color: mapping.area_color,
                         status: mapping.area_status,
+                        spaceStatus: mapping.status || 'available',  // Individual space status
                         name: mapping.area_name,
                         exists: true
                     };
@@ -874,6 +872,20 @@ $conn->close();
                     return; // Skip further processing
                 }
 
+                // Check individual space status - NEW SIMPLIFIED VERSION
+                // Debug logging
+                console.log('Slot', slotNum, 'spaceStatus:', areaInfo.spaceStatus);
+                
+                // If space status is NOT available, show as RED
+                if (areaInfo.spaceStatus && areaInfo.spaceStatus !== 'available') {
+                    console.log('Marking slot', slotNum, 'as RED due to status:', areaInfo.spaceStatus);
+                    slot.classList.add('space-unavailable');
+                    slot.setAttribute('fill', '#f56565'); // Red for occupied/reserved/maintenance
+                    slot.style.cursor = 'not-allowed';
+                    slot.style.pointerEvents = 'none';
+                    return; // Skip further processing
+                }
+
                 // Set the slot color based on its area (slot is available)
                 slot.setAttribute('fill', areaInfo.color);
 
@@ -914,7 +926,14 @@ $conn->close();
                 return;
             }
 
-            slots.forEach(s => s.classList.remove('booked', 'selected'));
+            slots.forEach(s => {
+                // Only remove booked/selected classes, preserve area-closed, space-unavailable, unavailable
+                if (!s.classList.contains('area-closed') && 
+                    !s.classList.contains('space-unavailable') && 
+                    !s.classList.contains('unavailable')) {
+                    s.classList.remove('booked', 'selected');
+                }
+            });
             // Note: Colors are reset by reload or by class removal, but 'fill' attribute remains. 
             // .booked class will override fill via CSS !important.
 
@@ -925,7 +944,10 @@ $conn->close();
                 .then(data => {
                     (data.booked || []).forEach(id => {
                         const el = document.getElementById('slot-' + id);
-                        if (el) {
+                        // Only mark as booked if the slot is not already area-closed, space-unavailable, or unavailable
+                        if (el && !el.classList.contains('area-closed') && 
+                            !el.classList.contains('space-unavailable') && 
+                            !el.classList.contains('unavailable')) {
                             el.classList.add('booked');
                             // Force fill color for booked slots
                             el.setAttribute('fill', '#f56565');
@@ -938,6 +960,8 @@ $conn->close();
             // Students can't select booked slots, admin/staff can
             if (isStudent && el.classList.contains('booked')) return;
             if (el.classList.contains('unavailable')) return;
+            if (el.classList.contains('area-closed')) return;
+            if (el.classList.contains('space-unavailable')) return;
 
             slots.forEach(s => s.classList.remove('selected'));
             el.classList.add('selected');

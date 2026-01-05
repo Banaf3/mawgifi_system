@@ -5,8 +5,8 @@
  * Run this once to set up the complete parking system
  */
 
-require_once '../../config/database.php';
-require_once '../../config/session.php';
+require_once '../config/database.php';
+require_once '../config/session.php';
 
 // Require admin access
 requireAdmin();

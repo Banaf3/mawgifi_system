@@ -383,7 +383,7 @@ function updateSpace($conn) {
     $area_id = isset($_POST['area_id']) ? intval($_POST['area_id']) : 0;
     $space_number = isset($_POST['space_number']) ? trim($_POST['space_number']) : '';
     $qr_code = isset($_POST['qr_code']) ? trim($_POST['qr_code']) : '';
-    $availability_id = isset($_POST['availability_id']) && $_POST['availability_id'] !== '' ? intval($_POST['availability_id']) : null;
+    $status = isset($_POST['status']) ? trim($_POST['status']) : 'available';
 
     // Validate required fields
     if ($space_id <= 0) {
@@ -399,6 +399,12 @@ function updateSpace($conn) {
         return;
     }
 
+    // Validate status
+    $valid_statuses = ['available', 'occupied', 'reserved', 'maintenance'];
+    if (!in_array($status, $valid_statuses)) {
+        $status = 'available';
+    }
+
     // Check if space number already exists (for another space)
     $check_sql = "SELECT Space_id FROM ParkingSpace WHERE space_number = ? AND Space_id != ?";
     $check_stmt = $conn->prepare($check_sql);
@@ -411,17 +417,13 @@ function updateSpace($conn) {
     }
     $check_stmt->close();
 
-    // Update space
-    $sql = "UPDATE ParkingSpace SET area_id = ?, space_number = ?, qr_code = ?, Availability_id = ? WHERE Space_id = ?";
+    // Update space with status
+    $sql = "UPDATE ParkingSpace SET area_id = ?, space_number = ?, qr_code = ?, status = ? WHERE Space_id = ?";
     $stmt = $conn->prepare($sql);
-    $stmt->bind_param("issii", $area_id, $space_number, $qr_code, $availability_id, $space_id);
+    $stmt->bind_param("isssi", $area_id, $space_number, $qr_code, $status, $space_id);
 
     if ($stmt->execute()) {
-        if ($stmt->affected_rows > 0) {
-            echo json_encode(['success' => true, 'message' => 'Parking space updated successfully']);
-        } else {
-            echo json_encode(['success' => true, 'message' => 'No changes made']);
-        }
+        echo json_encode(['success' => true, 'message' => 'Space updated. Status: ' . ucfirst($status)]);
     } else {
         echo json_encode(['success' => false, 'message' => 'Failed to update space: ' . $conn->error]);
     }
