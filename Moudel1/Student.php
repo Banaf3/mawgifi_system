@@ -226,13 +226,13 @@ closeDBConnection($conn);
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title><?php
-    if ($current_view === 'dashboard')
-        echo 'Student Dashboard';
-    elseif ($current_view === 'profile')
-        echo 'My Profile';
-    else
-        echo 'My Vehicles';
-    ?> - Mawgifi</title>
+            if ($current_view === 'dashboard')
+                echo 'Student Dashboard';
+            elseif ($current_view === 'profile')
+                echo 'My Profile';
+            else
+                echo 'My Vehicles';
+            ?> - Mawgifi</title>
     <link rel="stylesheet" href="Student.css">
 </head>
 
@@ -292,24 +292,24 @@ closeDBConnection($conn);
                 </div>
                 <div class="stat-card">
                     <div class="stat-number"><?php
-                    $approved = 0;
-                    foreach ($vehicles as $v) {
-                        if ($v['status'] === 'approved')
-                            $approved++;
-                    }
-                    echo $approved;
-                    ?></div>
+                                                $approved = 0;
+                                                foreach ($vehicles as $v) {
+                                                    if ($v['status'] === 'approved')
+                                                        $approved++;
+                                                }
+                                                echo $approved;
+                                                ?></div>
                     <div class="stat-label">Approved Vehicles</div>
                 </div>
                 <div class="stat-card">
                     <div class="stat-number"><?php
-                    $pending = 0;
-                    foreach ($vehicles as $v) {
-                        if ($v['status'] === 'pending')
-                            $pending++;
-                    }
-                    echo $pending;
-                    ?></div>
+                                                $pending = 0;
+                                                foreach ($vehicles as $v) {
+                                                    if ($v['status'] === 'pending')
+                                                        $pending++;
+                                                }
+                                                echo $pending;
+                                                ?></div>
                     <div class="stat-label">Pending Approval</div>
                 </div>
             </div>
@@ -596,7 +596,7 @@ closeDBConnection($conn);
         }
 
         // Close modal when clicking outside
-        window.onclick = function (event) {
+        window.onclick = function(event) {
             var editModal = document.getElementById('editVehicleModal');
             var reasonModal = document.getElementById('reasonModal');
             if (event.target === editModal) {
