@@ -1022,9 +1022,6 @@ $conn->close();
         // All API calls use fetch() to communicate with parking_api.php
         // =====================================================================
 
-        // Debug - verify script is loading
-        console.log('Parking Management JS Loaded');  // Line: Confirm JS file loaded in console
-
         // =====================================================================
         // TAB NAVIGATION
         // =====================================================================
@@ -1033,7 +1030,6 @@ $conn->close();
 
         document.querySelectorAll('.tab-btn').forEach(btn => {  // Line: Loop through all tab buttons
             btn.addEventListener('click', () => {  // Line: Add click handler to each
-                console.log('Tab clicked:', btn.dataset.tab);  // Line: Debug log which tab was clicked
                 // Remove active class from all tabs and content
                 document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));  // Line: Deactivate all tab buttons
                 document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));  // Line: Hide all tab content
@@ -1072,7 +1068,6 @@ $conn->close();
          * Resets the form and clears the area_id (indicates new record)
          */
         function openAreaModal() {
-            console.log('Opening area modal');  // Line: Debug log
             document.getElementById('areaModalTitle').textContent = 'Add New Parking Area';  // Line: Set modal title
             document.getElementById('areaForm').reset();  // Line: Clear all form fields
             document.getElementById('area_id').value = '';  // Line: Clear hidden area_id (new mode)
@@ -1098,7 +1093,6 @@ $conn->close();
          *   - area_status: Status string
          */
         function editArea(area) {
-            console.log('Editing area:', area);  // Line: Debug log area object
             document.getElementById('areaModalTitle').textContent = 'Edit Parking Area';  // Line: Set modal title for edit
             document.getElementById('area_id').value = area.area_id;  // Line: Set hidden ID (edit mode)
             document.getElementById('area_name').value = area.area_name;  // Line: Pre-fill area name
@@ -1124,7 +1118,6 @@ $conn->close();
          */
         async function submitAreaForm(e) {
             e.preventDefault();  // Line: Stop form from traditional submit
-            console.log('Submitting area form');  // Line: Debug log
             const formData = new FormData(document.getElementById('areaForm'));  // Line: Collect all form fields
             const areaId = formData.get('area_id');  // Line: Check if area_id exists
 
@@ -1137,15 +1130,12 @@ $conn->close();
                     method: 'POST',  // Line: HTTP method
                     body: formData  // Line: Form data as body
                 });
-                console.log('Response status:', response.status);  // Line: Debug response status
                 const text = await response.text();  // Line: Get raw response text
-                console.log('Response text:', text);  // Line: Debug response body
 
                 let data;  // Line: Variable for parsed JSON
                 try {
                     data = JSON.parse(text);  // Line: Parse JSON response
                 } catch (parseError) {
-                    console.error('JSON parse error:', parseError);  // Line: Log parse errors
                     showToast('Server error: Invalid response', 'error');  // Line: Show error to user
                     return;  // Line: Exit function
                 }
@@ -1159,7 +1149,6 @@ $conn->close();
                     showToast(data.message, 'error');  // Line: Show error message
                 }
             } catch (error) {
-                console.error('Fetch error:', error);  // Line: Log network errors
                 showToast('An error occurred: ' + error.message, 'error');  // Line: Show error to user
             }
         }
@@ -1185,15 +1174,12 @@ $conn->close();
                     headers: { 'Content-Type': 'application/x-www-form-urlencoded' },  // Line: Form content type
                     body: `action=delete&area_id=${areaId}`  // Line: URL-encoded body
                 });
-                console.log('Delete area response status:', response.status);  // Line: Debug log
                 const text = await response.text();  // Line: Get raw response text
-                console.log('Delete area response:', text);  // Line: Debug log response
 
                 let data;  // Line: Variable for parsed JSON
                 try {
                     data = JSON.parse(text);  // Line: Parse JSON response
                 } catch (parseError) {
-                    console.error('JSON parse error:', parseError);  // Line: Log parse errors
                     showToast('Server error: Invalid response', 'error');  // Line: Show error to user
                     return;  // Line: Exit function
                 }
@@ -1206,7 +1192,6 @@ $conn->close();
                     showToast(data.message, 'error');  // Line: Show error message
                 }
             } catch (error) {
-                console.error('Fetch error:', error);  // Line: Log network errors
                 showToast('An error occurred: ' + error.message, 'error');  // Line: Show error to user
             }
         }
@@ -1221,7 +1206,6 @@ $conn->close();
          * Resets the form and clears the space_id (indicates new record)
          */
         function openSpaceModal() {
-            console.log('Opening space modal');  // Line: Debug log
             document.getElementById('spaceModalTitle').textContent = 'Add New Parking Space';  // Line: Set modal title
             document.getElementById('spaceForm').reset();  // Line: Clear all form fields
             document.getElementById('space_id').value = '';  // Line: Clear hidden space_id (new mode)
@@ -1247,14 +1231,12 @@ $conn->close();
          *   - status: Current status
          */
         function editSpace(space) {
-            console.log('Editing space:', space);  // Line: Debug log space object
             document.getElementById('spaceModalTitle').textContent = 'Edit Parking Space';  // Line: Set modal title for edit
             document.getElementById('space_id').value = space.Space_id;  // Line: Set hidden ID (edit mode)
             document.getElementById('space_area_id').value = space.area_id;  // Line: Pre-fill area dropdown
             document.getElementById('space_number').value = space.space_number;  // Line: Pre-fill space number
             document.getElementById('qr_code').value = space.qr_code || '';  // Line: Pre-fill QR code
             document.getElementById('status').value = space.status || 'available';  // Line: Pre-fill status
-            console.log('Setting status to:', space.status || 'available');  // Line: Debug log status
             
             // -------------------------------------------------------------------
             // Generate QR Code Preview using external QR API
@@ -1285,7 +1267,6 @@ $conn->close();
          */
         async function submitSpaceForm(e) {
             e.preventDefault();  // Line: Stop form from traditional submit
-            console.log('Submitting space form');  // Line: Debug log
             
             // -------------------------------------------------------------------
             // Validate space count before creating new space
@@ -1308,15 +1289,12 @@ $conn->close();
                     method: 'POST',  // Line: HTTP method
                     body: formData  // Line: Form data as body
                 });
-                console.log('Response status:', response.status);  // Line: Debug response status
                 const text = await response.text();  // Line: Get raw response text
-                console.log('Response text:', text);  // Line: Debug response body
 
                 let data;  // Line: Variable for parsed JSON
                 try {
                     data = JSON.parse(text);  // Line: Parse JSON response
                 } catch (parseError) {
-                    console.error('JSON parse error:', parseError);  // Line: Log parse errors
                     showToast('Server error: Invalid response', 'error');  // Line: Show error to user
                     return;  // Line: Exit function
                 }
@@ -1330,7 +1308,6 @@ $conn->close();
                     showToast(data.message, 'error');  // Line: Show error message
                 }
             } catch (error) {
-                console.error('Fetch error:', error);  // Line: Log network errors
                 showToast('An error occurred: ' + error.message, 'error');  // Line: Show error to user
             }
         }
@@ -1354,16 +1331,13 @@ $conn->close();
                     headers: { 'Content-Type': 'application/x-www-form-urlencoded' },  // Line: Form content type
                     body: `action=delete&space_id=${spaceId}`  // Line: URL-encoded body
                 });
-                console.log('Delete response status:', response.status);  // Line: Debug log
                 const text = await response.text();  // Line: Get raw response text
-                console.log('Delete response:', text);  // Line: Debug log response
 
                 let data;  // Line: Variable for parsed JSON
                 try {
                     data = JSON.parse(text);  // Line: Parse JSON response
                 } catch (parseError) {
-                    console.error('JSON parse error:', parseError);  // Line: Log parse errors
-                    showToast('Server error: Invalid response', 'error');  // Line: Show error to user
+                    showToast('Server error: Invalid response', 'error';  // Line: Show error to user
                     return;  // Line: Exit function
                 }
 
@@ -1448,7 +1422,6 @@ $conn->close();
          */
         async function submitBulkSpaceForm(e) {
             e.preventDefault();  // Line: Stop form from traditional submit
-            console.log('Submitting bulk space form');  // Line: Debug log
             
             // -------------------------------------------------------------------
             // Calculate space count and validate
@@ -1472,16 +1445,13 @@ $conn->close();
                     method: 'POST',  // Line: HTTP method
                     body: formData  // Line: Form data as body
                 });
-                console.log('Bulk create response status:', response.status);  // Line: Debug log
                 const text = await response.text();  // Line: Get raw response text
-                console.log('Bulk create response:', text);  // Line: Debug log response
 
                 let data;  // Line: Variable for parsed JSON
                 try {
                     data = JSON.parse(text);  // Line: Parse JSON response
                 } catch (parseError) {
-                    console.error('JSON parse error:', parseError);  // Line: Log parse errors
-                    showToast('Server error: Invalid response', 'error');  // Line: Show error to user
+                    showToast('Server error: Invalid response', 'error';  // Line: Show error to user
                     return;  // Line: Exit function
                 }
 
@@ -1494,7 +1464,6 @@ $conn->close();
                     showToast(data.message, 'error');  // Line: Show error message
                 }
             } catch (error) {
-                console.error('Fetch error:', error);  // Line: Log network errors
                 showToast('An error occurred: ' + error.message, 'error');  // Line: Show error to user
             }
         }
@@ -1548,7 +1517,7 @@ $conn->close();
                         }
                     }
                 })
-                .catch(error => console.error('Error fetching stats:', error));  // Line: Log any errors
+                .catch(error => {});  // Line: Handle any errors silently
         }
 
         /**
@@ -1577,7 +1546,7 @@ $conn->close();
                     return { valid: true };  // Line: Validation passed
                 }
             } catch (error) {
-                console.error('Validation error:', error);  // Line: Log errors
+                // Handle validation errors silently
             }
             return { valid: true };  // Line: Allow if validation fails (fail-open)
         }
@@ -1588,7 +1557,6 @@ $conn->close();
         // Run on page load
         
         updateTotalSpaceCount();  // Line: Fetch and display initial space count
-        console.log('All functions defined successfully');  // Line: Debug confirmation
     </script>
 </body>
 

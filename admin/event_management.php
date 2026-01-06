@@ -681,7 +681,7 @@ $username = $_SESSION['username'] ?? 'Administrator';
                         });
                     }
                 })
-                .catch(error => console.error('Error loading areas:', error));
+                .catch(() => {});
         }
 
         // Load all events
@@ -696,7 +696,6 @@ $username = $_SESSION['username'] ?? 'Administrator';
                     }
                 })
                 .catch(error => {
-                    console.error('Error:', error);
                     showError('Failed to load events');
                 });
         }
@@ -806,7 +805,6 @@ $username = $_SESSION['username'] ?? 'Administrator';
                     }
                 })
                 .catch(error => {
-                    console.error('Error:', error);
                     showError('Failed to load event');
                 });
         }
@@ -821,22 +819,12 @@ $username = $_SESSION['username'] ?? 'Administrator';
 
             formData.append('type', type);
 
-            // Debug: Log what's being sent
-            console.log('Submitting event form:');
-            console.log('Event ID:', eventId);
-            console.log('Type:', type);
-            console.log('Area ID value:', document.getElementById('area_id').value);
-            for (let [key, value] of formData.entries()) {
-                console.log(key + ':', value);
-            }
-
             fetch('event_api.php', {
                 method: 'POST',
                 body: formData
             })
                 .then(response => response.json())
                 .then(data => {
-                    console.log('API Response:', data);
                     if (data.success) {
                         closeEventModal();
                         loadEvents();
@@ -846,7 +834,6 @@ $username = $_SESSION['username'] ?? 'Administrator';
                     }
                 })
                 .catch(error => {
-                    console.error('Error:', error);
                     showError('Failed to save event');
                 });
         }
@@ -874,7 +861,6 @@ $username = $_SESSION['username'] ?? 'Administrator';
                     }
                 })
                 .catch(error => {
-                    console.error('Error:', error);
                     showError('Failed to delete event');
                 });
         }

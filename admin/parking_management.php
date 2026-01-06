@@ -858,13 +858,9 @@ $conn->close();
     <div class="toast" id="toast"></div>
 
     <script>
-        // Debug - verify script is loading
-        console.log('Parking Management JS Loaded');
-
         // Tab switching
         document.querySelectorAll('.tab-btn').forEach(btn => {
             btn.addEventListener('click', () => {
-                console.log('Tab clicked:', btn.dataset.tab);
                 document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
                 document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
 
@@ -884,7 +880,6 @@ $conn->close();
         // ========== AREA FUNCTIONS ==========
 
         function openAreaModal() {
-            console.log('Opening area modal');
             document.getElementById('areaModalTitle').textContent = 'Add New Parking Area';
             document.getElementById('areaForm').reset();
             document.getElementById('area_id').value = '';
@@ -896,7 +891,6 @@ $conn->close();
         }
 
         function editArea(area) {
-            console.log('Editing area:', area);
             document.getElementById('areaModalTitle').textContent = 'Edit Parking Area';
             document.getElementById('area_id').value = area.area_id;
             document.getElementById('area_name').value = area.area_name;
@@ -909,7 +903,6 @@ $conn->close();
 
         async function submitAreaForm(e) {
             e.preventDefault();
-            console.log('Submitting area form');
             const formData = new FormData(document.getElementById('areaForm'));
             const areaId = formData.get('area_id');
 
@@ -920,15 +913,12 @@ $conn->close();
                     method: 'POST',
                     body: formData
                 });
-                console.log('Response status:', response.status);
                 const text = await response.text();
-                console.log('Response text:', text);
 
                 let data;
                 try {
                     data = JSON.parse(text);
                 } catch (parseError) {
-                    console.error('JSON parse error:', parseError);
                     showToast('Server error: Invalid response', 'error');
                     return;
                 }
@@ -941,7 +931,6 @@ $conn->close();
                     showToast(data.message, 'error');
                 }
             } catch (error) {
-                console.error('Fetch error:', error);
                 showToast('An error occurred: ' + error.message, 'error');
             }
         }
@@ -957,15 +946,12 @@ $conn->close();
                     headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
                     body: `action=delete&area_id=${areaId}`
                 });
-                console.log('Delete area response status:', response.status);
                 const text = await response.text();
-                console.log('Delete area response:', text);
 
                 let data;
                 try {
                     data = JSON.parse(text);
                 } catch (parseError) {
-                    console.error('JSON parse error:', parseError);
                     showToast('Server error: Invalid response', 'error');
                     return;
                 }
@@ -977,14 +963,12 @@ $conn->close();
                     showToast(data.message, 'error');
                 }
             } catch (error) {
-                console.error('Fetch error:', error);
                 showToast('An error occurred: ' + error.message, 'error');
             }
         }
         // ========== SPACE FUNCTIONS ==========
 
         function openSpaceModal() {
-            console.log('Opening space modal');
             document.getElementById('spaceModalTitle').textContent = 'Add New Parking Space';
             document.getElementById('spaceForm').reset();
             document.getElementById('space_id').value = '';
@@ -996,7 +980,6 @@ $conn->close();
         }
 
         function editSpace(space) {
-            console.log('Editing space:', space);
             document.getElementById('spaceModalTitle').textContent = 'Edit Parking Space';
             document.getElementById('space_id').value = space.Space_id;
             document.getElementById('space_area_id').value = space.area_id;
@@ -1016,7 +999,6 @@ $conn->close();
 
         async function submitSpaceForm(e) {
             e.preventDefault();
-            console.log('Submitting space form');
 
             // Validate space count before creating (only for new spaces, not updates)
             const spaceId = document.getElementById('space_id').value;
@@ -1036,15 +1018,12 @@ $conn->close();
                     method: 'POST',
                     body: formData
                 });
-                console.log('Response status:', response.status);
                 const text = await response.text();
-                console.log('Response text:', text);
 
                 let data;
                 try {
                     data = JSON.parse(text);
                 } catch (parseError) {
-                    console.error('JSON parse error:', parseError);
                     showToast('Server error: Invalid response', 'error');
                     return;
                 }
@@ -1057,7 +1036,6 @@ $conn->close();
                     showToast(data.message, 'error');
                 }
             } catch (error) {
-                console.error('Fetch error:', error);
                 showToast('An error occurred: ' + error.message, 'error');
             }
         }
@@ -1073,15 +1051,12 @@ $conn->close();
                     headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
                     body: `action=delete&space_id=${spaceId}`
                 });
-                console.log('Delete response status:', response.status);
                 const text = await response.text();
-                console.log('Delete response:', text);
 
                 let data;
                 try {
                     data = JSON.parse(text);
                 } catch (parseError) {
-                    console.error('JSON parse error:', parseError);
                     showToast('Server error: Invalid response', 'error');
                     return;
                 }
@@ -1129,7 +1104,6 @@ $conn->close();
 
         async function submitBulkSpaceForm(e) {
             e.preventDefault();
-            console.log('Submitting bulk space form');
 
             // Validate space count before creating
             const start = parseInt(document.getElementById('bulk_start').value) || 1;
@@ -1150,15 +1124,12 @@ $conn->close();
                     method: 'POST',
                     body: formData
                 });
-                console.log('Bulk create response status:', response.status);
                 const text = await response.text();
-                console.log('Bulk create response:', text);
 
                 let data;
                 try {
                     data = JSON.parse(text);
                 } catch (parseError) {
-                    console.error('JSON parse error:', parseError);
                     showToast('Server error: Invalid response', 'error');
                     return;
                 }
@@ -1171,7 +1142,6 @@ $conn->close();
                     showToast(data.message, 'error');
                 }
             } catch (error) {
-                console.error('Fetch error:', error);
                 showToast('An error occurred: ' + error.message, 'error');
             }
         }
@@ -1209,7 +1179,7 @@ $conn->close();
                         }
                     }
                 })
-                .catch(error => console.error('Error fetching stats:', error));
+                .catch(() => {});
         }
 
         // Validate space count before creating
@@ -1228,14 +1198,13 @@ $conn->close();
                     return { valid: true };
                 }
             } catch (error) {
-                console.error('Validation error:', error);
+                // Handle silently
             }
             return { valid: true }; // Allow if validation fails
         }
 
         // Initialize
         updateTotalSpaceCount();
-        console.log('All functions defined successfully');
     </script>
 </body>
 

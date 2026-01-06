@@ -991,10 +991,6 @@ $conn->close();  // Line 294: Close database connection
             // Key: slot number (1-100), Value: object with space_id, area_name, colors, status
             const slotAreaMapping = <?php echo json_encode($area_slot_mapping); ?>;
 
-            // Debug logging for development
-            console.log('Slot 1 mapping:', slotAreaMapping[1]); // Line: Debug slot 1 data
-            console.log('Full mapping:', slotAreaMapping); // Line: Debug all slot mappings
-
             // Array of available space numbers from database (spaces that exist)
             // Only these slot numbers are clickable
             const availableSpaces = <?php echo json_encode($available_spaces); ?>;
@@ -1112,11 +1108,8 @@ $conn->close();  // Line 294: Close database connection
                 // CHECK 4: Is the individual space available?
                 // ---------------------------------------------------------
                 // Check individual space status
-                console.log('Slot', slotNum, 'spaceStatus:', areaInfo.spaceStatus); // Line: Debug log
-
                 // If space status is NOT available, show as RED
-                if (areaInfo.spaceStatus && areaInfo.spaceStatus !== 'available') { // Line: Check space status
-                    console.log('Marking slot', slotNum, 'as RED due to status:', areaInfo.spaceStatus); // Line: Debug log
+                if (areaInfo.spaceStatus && areaInfo.spaceStatus !== 'available') {
                     slot.classList.add('space-unavailable'); // Line: Add unavailable class
                     slot.setAttribute('fill', '#f56565'); // Line: Set fill to red
                     slot.style.cursor = 'not-allowed'; // Line: Change cursor
@@ -1204,7 +1197,7 @@ $conn->close();  // Line 294: Close database connection
             clearSelection(); // Line: Clear any current selection
 
             // Fetch booked slots from API
-            fetch(`../booking/api/get_slots.php?date=${date}&start=${start}&end=${end}`) // Line: API call
+            fetch(`../../modules/booking/api/get_slots.php?date=${date}&start=${start}&end=${end}`) // Line: API call
                 .then(r => r.json()) // Line: Parse JSON
                 .then(data => {
                     // Mark each booked slot
@@ -1280,7 +1273,7 @@ $conn->close();  // Line 294: Close database connection
             const start = getTime('startHour', 'startAmPm');
             const end = getTime('endHour', 'endAmPm');
 
-            fetch(`../booking/api/get_slot_booking.php?slot=${selectedSlot}&date=${date}&start=${start}&end=${end}`)
+            fetch(`../../modules/booking/api/get_slot_booking.php?slot=${selectedSlot}&date=${date}&start=${start}&end=${end}`)
                 .then(r => r.json())
                 .then(data => {
                     const infoDiv = document.getElementById('bookingInfo');
@@ -1351,7 +1344,13 @@ $conn->close();  // Line 294: Close database connection
                         end_time: end
                     })
                 })
-                .then(r => r.json())
+                .then(r => {
+                    // Check if response is OK before parsing JSON
+                    if (!r.ok) {
+                        throw new Error('Server error: ' + r.status);
+                    }
+                    return r.json();
+                })
                 .then(data => {
                     if (data.success) {
                         showMsg('Booking confirmed!', 'success');
@@ -1361,8 +1360,8 @@ $conn->close();  // Line 294: Close database connection
                         document.getElementById('confirmBtn').disabled = false;
                     }
                 })
-                .catch(() => {
-                    showMsg('Error occurred', 'error');
+                .catch((err) => {
+                    showMsg('Error: ' + (err.message || 'Request failed'), 'error');
                     document.getElementById('confirmBtn').disabled = false;
                 });
         }

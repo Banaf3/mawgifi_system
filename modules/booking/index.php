@@ -467,6 +467,67 @@ $conn->close();
                 margin-top: 10px;
             }
         }
+
+        /* Search and Filter Styles */
+        .search-filter-container {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 25px;
+            flex-wrap: wrap;
+        }
+
+        .search-box {
+            flex: 1;
+            min-width: 200px;
+            position: relative;
+        }
+
+        .search-box input {
+            width: 100%;
+            padding: 12px 15px 12px 40px;
+            border: 2px solid #e2e8f0;
+            border-radius: 10px;
+            font-size: 0.95rem;
+            transition: border-color 0.3s;
+        }
+
+        .search-box input:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .search-box::before {
+            content: '🔍';
+            position: absolute;
+            left: 12px;
+            top: 50%;
+            transform: translateY(-50%);
+            font-size: 1rem;
+        }
+
+        .filter-select {
+            padding: 12px 15px;
+            border: 2px solid #e2e8f0;
+            border-radius: 10px;
+            font-size: 0.95rem;
+            background: white;
+            cursor: pointer;
+            min-width: 150px;
+        }
+
+        .filter-select:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .no-results {
+            text-align: center;
+            padding: 40px 20px;
+            color: #718096;
+            background: #f7fafc;
+            border-radius: 12px;
+            display: none;
+        }
     </style>
 </head>
 
@@ -489,8 +550,8 @@ $conn->close();
             <?php elseif (isset($_SESSION['user_type']) && $_SESSION['user_type'] === 'staff'): ?>
                 <!-- Staff Navbar -->
                 <a href="../../Moudel1/Stafe.php?view=dashboard">Dashboard</a>
-                <a href="../../Moudel1/Stafe.php?view=requests">Vehicles</a>
-                <a href="../parking/index.php">Find Parking</a>
+                <a href="../../Moudel1/Stafe.php?view=requests">Vehicles Request</a>
+                <a href="../parking/index.php">Parking Areas</a>
                 <a href="index.php" class="active">Bookings</a>
                 <a href="../../Moudel1/Stafe.php?view=profile">Profile</a>
             <?php else: ?>
@@ -511,6 +572,25 @@ $conn->close();
 
     <div class="container">
         <h1 class="page-title">🎫 <?= $is_admin_or_staff ? 'Bookings' : 'My Bookings' ?></h1>
+
+        <!-- Search and Filter -->
+        <?php if (!empty($bookings)): ?>
+        <div class="search-filter-container">
+            <div class="search-box">
+                <input type="text" id="searchInput" placeholder="Search by slot, vehicle, user..." onkeyup="filterBookings()">
+            </div>
+            <select class="filter-select" id="statusFilter" onchange="filterBookings()">
+                <option value="all">All Status</option>
+                <option value="active">Active</option>
+                <option value="upcoming">Upcoming</option>
+                <option value="completed">Completed</option>
+            </select>
+        </div>
+        <div class="no-results" id="noResults">
+            <span style="font-size: 2rem;">🔍</span>
+            <p>No bookings match your search criteria</p>
+        </div>
+        <?php endif; ?>
 
         <?php if (empty($bookings)): ?>
             <div class="empty-state">
@@ -802,7 +882,6 @@ $conn->close();
                     }
                 })
                 .catch(error => {
-                    console.error('Error:', error);
                     alert('❌ An error occurred. Please try again.');
                 });
         });
@@ -854,9 +933,63 @@ $conn->close();
                     }
                 })
                 .catch(error => {
-                    console.error('Error:', error);
                     alert('❌ An error occurred. Please try again.');
                 });
+        }
+
+        // Filter bookings function
+        function filterBookings() {
+            const searchTerm = document.getElementById('searchInput').value.toLowerCase();
+            const statusFilter = document.getElementById('statusFilter').value;
+            const bookingCards = document.querySelectorAll('.booking-card');
+            const sectionTitles = document.querySelectorAll('.section-title');
+            let visibleCount = 0;
+
+            bookingCards.forEach(card => {
+                const cardText = card.textContent.toLowerCase();
+                const cardId = card.id;
+                
+                // Determine card status from parent section or badge
+                let cardStatus = 'upcoming';
+                const statusBadge = card.querySelector('.status-badge');
+                if (statusBadge) {
+                    if (statusBadge.classList.contains('active')) cardStatus = 'active';
+                    else if (statusBadge.classList.contains('completed')) cardStatus = 'completed';
+                    else cardStatus = 'upcoming';
+                }
+
+                const matchesSearch = cardText.includes(searchTerm);
+                const matchesStatus = statusFilter === 'all' || cardStatus === statusFilter;
+
+                if (matchesSearch && matchesStatus) {
+                    card.style.display = 'flex';
+                    visibleCount++;
+                } else {
+                    card.style.display = 'none';
+                }
+            });
+
+            // Show/hide section titles based on visible cards in each section
+            sectionTitles.forEach(title => {
+                let nextElement = title.nextElementSibling;
+                let hasVisibleCards = false;
+                
+                while (nextElement && !nextElement.classList.contains('section-title')) {
+                    if (nextElement.classList.contains('booking-card') && nextElement.style.display !== 'none') {
+                        hasVisibleCards = true;
+                        break;
+                    }
+                    nextElement = nextElement.nextElementSibling;
+                }
+                
+                title.style.display = hasVisibleCards ? 'block' : 'none';
+            });
+
+            // Show no results message
+            const noResults = document.getElementById('noResults');
+            if (noResults) {
+                noResults.style.display = visibleCount === 0 ? 'block' : 'none';
+            }
         }
     </script>
 </body>

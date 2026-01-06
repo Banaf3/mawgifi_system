@@ -1,4 +1,5 @@
 <?php
+
 /**
  * Event Management API
  * Handles CRUD operations for facility events
@@ -57,7 +58,7 @@ function listEvents($conn)
     $check_sql = "SHOW COLUMNS FROM Event LIKE 'area_id'";
     $result = $conn->query($check_sql);
     $has_area_column = $result && $result->num_rows > 0;
-    
+
     $sql = "SELECT e.event_id, e.event_name, e.event_type, e.event_time, e.duration_minutes, e.RecordReport, e.created_at";
     if ($has_area_column) {
         $sql .= ", e.area_id, pa.area_name";
@@ -97,13 +98,13 @@ function getEvent($conn)
     $check_sql = "SHOW COLUMNS FROM Event LIKE 'area_id'";
     $result = $conn->query($check_sql);
     $has_area_column = $result && $result->num_rows > 0;
-    
+
     $sql = "SELECT event_id, event_name, event_type, event_time, duration_minutes, RecordReport, created_at";
     if ($has_area_column) {
         $sql .= ", area_id";
     }
     $sql .= " FROM Event WHERE event_id = ?";
-    
+
     $stmt = $conn->prepare($sql);
     $stmt->bind_param("i", $eventId);
     $stmt->execute();
@@ -129,13 +130,8 @@ function createEvent($conn)
     $eventTime = trim($_POST['event_time'] ?? '');
     $durationMinutes = intval($_POST['duration_minutes'] ?? 0);
     $recordReport = trim($_POST['RecordReport'] ?? '');
-    
-    // Debug: Log what we received for area_id
-    $rawAreaId = $_POST['area_id'] ?? 'NOT SET';
-    error_log("Event API - Raw area_id from POST: " . print_r($rawAreaId, true));
-    
+
     $areaId = !empty($_POST['area_id']) ? intval($_POST['area_id']) : null;
-    error_log("Event API - Parsed area_id: " . ($areaId === null ? 'NULL' : $areaId));
 
     // Validation
     if (empty($eventName)) {
@@ -160,12 +156,12 @@ function createEvent($conn)
 
     // Convert datetime-local format to MySQL datetime
     $eventTime = str_replace('T', ' ', $eventTime) . ':00';
-    
+
     // Check if area_id column exists
     $check_sql = "SHOW COLUMNS FROM Event LIKE 'area_id'";
     $result = $conn->query($check_sql);
     $has_area_column = $result && $result->num_rows > 0;
-    
+
     // Debug info
     $debug = [
         'raw_area_id' => $_POST['area_id'] ?? 'NOT SET',
@@ -186,7 +182,7 @@ function createEvent($conn)
 
     if ($stmt->execute()) {
         $event_id = $conn->insert_id;
-        
+
         // If area is assigned and area_status column exists, set it to temporarily_closed
         if ($areaId && $has_area_column) {
             $check_status = "SHOW COLUMNS FROM ParkingArea LIKE 'area_status'";
@@ -198,7 +194,7 @@ function createEvent($conn)
                 $update_stmt->close();
             }
         }
-        
+
         echo json_encode([
             'success' => true,
             'message' => 'Event created successfully' . ($areaId ? ' and parking area closed' : ''),
@@ -256,7 +252,7 @@ function updateEvent($conn)
     $check_sql = "SHOW COLUMNS FROM Event LIKE 'area_id'";
     $result = $conn->query($check_sql);
     $has_area_column = $result && $result->num_rows > 0;
-    
+
     if ($has_area_column) {
         $get_old = $conn->prepare("SELECT area_id FROM Event WHERE event_id = ?");
         $get_old->bind_param("i", $eventId);
@@ -297,7 +293,7 @@ function updateEvent($conn)
         $check_status = "SHOW COLUMNS FROM ParkingArea LIKE 'area_status'";
         $status_result = $conn->query($check_status);
         $has_status = $status_result && $status_result->num_rows > 0;
-        
+
         if ($has_area_column && $has_status) {
             // Reopen old area if it was changed
             if ($old_area_id && $old_area_id != $areaId) {
@@ -306,7 +302,7 @@ function updateEvent($conn)
                 $reopen_stmt->execute();
                 $reopen_stmt->close();
             }
-            
+
             // Close new area
             if ($areaId) {
                 $close_stmt = $conn->prepare("UPDATE ParkingArea SET area_status = 'temporarily_closed' WHERE area_id = ?");
@@ -315,7 +311,7 @@ function updateEvent($conn)
                 $close_stmt->close();
             }
         }
-        
+
         echo json_encode(['success' => true, 'message' => 'Event updated successfully', 'affected_rows' => $stmt->affected_rows]);
     } else {
         echo json_encode(['success' => false, 'message' => 'Failed to update event: ' . $stmt->error]);
@@ -341,7 +337,7 @@ function deleteEvent($conn)
     $check_sql = "SHOW COLUMNS FROM Event LIKE 'area_id'";
     $result = $conn->query($check_sql);
     $has_area_column = $result && $result->num_rows > 0;
-    
+
     if ($has_area_column) {
         $get_area = $conn->prepare("SELECT area_id FROM Event WHERE event_id = ?");
         $get_area->bind_param("i", $eventId);
@@ -369,7 +365,7 @@ function deleteEvent($conn)
                     $reopen_stmt->close();
                 }
             }
-            
+
             echo json_encode(['success' => true, 'message' => 'Event deleted successfully' . ($area_id ? ' and area reopened' : '')]);
         } else {
             echo json_encode(['success' => false, 'message' => 'Event not found']);
@@ -416,35 +412,35 @@ function getEventStats($conn)
 function debugInfo($conn)
 {
     $debug = [];
-    
+
     // Check Event table columns
     $result = $conn->query("SHOW COLUMNS FROM Event");
     $debug['event_columns'] = [];
     while ($row = $result->fetch_assoc()) {
         $debug['event_columns'][] = $row['Field'];
     }
-    
+
     // Check if area_id exists
     $check_sql = "SHOW COLUMNS FROM Event LIKE 'area_id'";
     $result = $conn->query($check_sql);
     $debug['has_area_id_column'] = $result && $result->num_rows > 0;
-    
+
     // List existing events with area_id
     $result = $conn->query("SELECT event_id, event_name, area_id FROM Event ORDER BY event_id DESC LIMIT 5");
     $debug['recent_events'] = [];
     while ($row = $result->fetch_assoc()) {
         $debug['recent_events'][] = $row;
     }
-    
+
     // Get all areas
     $result = $conn->query("SELECT area_id, area_name FROM ParkingArea");
     $debug['areas'] = [];
     while ($row = $result->fetch_assoc()) {
         $debug['areas'][] = $row;
     }
-    
+
     // Check received POST data
     $debug['post_data'] = $_POST;
-    
+
     echo json_encode(['success' => true, 'debug' => $debug]);
 }

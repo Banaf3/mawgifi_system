@@ -67,6 +67,12 @@ if (strtotime($end_time) <= strtotime($start_time)) {
     $booking_end = date('Y-m-d', strtotime($date . ' +1 day')) . ' ' . $end_time . ':00';
 }
 
+// Validate that new booking time is not in the past
+if (strtotime($booking_start) <= time()) {
+    echo json_encode(['success' => false, 'message' => 'Cannot set booking time to the past']);
+    exit;
+}
+
 // Check for conflicts
 $space_id = $booking['Space_id'];
 require_once 'utils.php';

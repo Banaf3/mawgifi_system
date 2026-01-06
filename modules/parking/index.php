@@ -587,9 +587,9 @@ $conn->close();
                 <a href="../../Moudel1/Admin.php?view=profile">Profile</a>
             <?php else: ?>
                 <a href="../../Moudel1/Stafe.php?view=dashboard">Dashboard</a>
-                <a href="../../Moudel1/Stafe.php?view=requests">Vehicles</a>
+                <a href="../../Moudel1/Stafe.php?view=requests">Vehicles Request</a>
                 <a href="../parking/index.php" class="active">Parking Areas</a>
-                <a href="../../Moudel1/Stafe.php?view=bookings">Bookings</a>
+                <a href="../booking/index.php">Bookings</a>
                 <a href="../../Moudel1/Stafe.php?view=profile">Profile</a>
             <?php endif; ?>
         </div>
@@ -1078,7 +1078,12 @@ $conn->close();
                     end_time: end
                 })
             })
-                .then(r => r.json())
+                .then(r => {
+                    if (!r.ok) {
+                        throw new Error('Server error: ' + r.status);
+                    }
+                    return r.json();
+                })
                 .then(data => {
                     if (data.success) {
                         showMsg('Booking confirmed!', 'success');
@@ -1088,8 +1093,8 @@ $conn->close();
                         document.getElementById('confirmBtn').disabled = false;
                     }
                 })
-                .catch(() => {
-                    showMsg('Error occurred', 'error');
+                .catch((err) => {
+                    showMsg('Error: ' + (err.message || 'Request failed'), 'error');
                     document.getElementById('confirmBtn').disabled = false;
                 });
         }
