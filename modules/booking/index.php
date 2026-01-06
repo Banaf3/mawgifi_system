@@ -65,11 +65,11 @@ foreach ($bookings as &$booking) {
     $end = strtotime($booking['booking_end']);
 
     // Check if checked out
-    if (isset($booking['check_out']) && !empty($booking['check_out'])) {
+    if (isset($booking['check_out_time']) && !empty($booking['check_out_time'])) {
         $booking['status'] = 'completed';
     }
-    // Check if checked in or currently within booking time
-    elseif ((isset($booking['check_in']) && !empty($booking['check_in'])) || ($now >= $start && $now <= $end)) {
+    // Check if checked in (even before booking time starts) or currently within booking time
+    elseif ((isset($booking['check_in_time']) && !empty($booking['check_in_time'])) || ($now >= $start && $now <= $end)) {
         $booking['status'] = 'active';
     }
     // Check if booking has ended
