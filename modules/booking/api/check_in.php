@@ -50,6 +50,9 @@ $minutes_until_start = (int)$booking['minutes_until_start'];
 if ($minutes_until_start > 60) {
     $time_until = $minutes_until_start - 60;
     echo json_encode(['success' => false, 'message' => "Check-in opens 1 hour before booking. Please wait $time_until more minutes."]);
+    $conn->close();
+    exit;
+}
 
 // Update check-in
 $stmt = $conn->prepare("UPDATE Booking SET check_in_time = NOW(), status = 'checked_in' WHERE booking_id = ?");

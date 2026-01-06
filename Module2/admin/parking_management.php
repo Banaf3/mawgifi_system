@@ -1,4 +1,5 @@
 <?php
+
 /**
  * =============================================================================
  * PARKING MANAGEMENT - ADMIN MODULE
@@ -716,7 +717,7 @@ $conn->close();
                                         </td>
                                         <td><?php echo $area['AreaSize'] ? $area['AreaSize'] . ' m²' : 'N/A'; ?></td>
                                         <td>
-                                            <?php 
+                                            <?php
                                             $status = $area['area_status'] ?? 'available';
                                             $statusColor = 'success';
                                             $statusText = ucwords(str_replace('_', ' ', $status));
@@ -798,7 +799,7 @@ $conn->close();
                                             </span>
                                         </td>
                                         <td>
-                                            <?php 
+                                            <?php
                                             $status = $space['status'] ?? 'available';
                                             $status_color = 'success';
                                             if (in_array($status, ['occupied', 'reserved', 'maintenance'])) {
@@ -1028,15 +1029,15 @@ $conn->close();
         // Handles switching between "Parking Areas" and "Parking Spaces" tabs
         // Uses data-tab attribute on buttons to identify which tab to show
 
-        document.querySelectorAll('.tab-btn').forEach(btn => {  // Line: Loop through all tab buttons
-            btn.addEventListener('click', () => {  // Line: Add click handler to each
+        document.querySelectorAll('.tab-btn').forEach(btn => { // Line: Loop through all tab buttons
+            btn.addEventListener('click', () => { // Line: Add click handler to each
                 // Remove active class from all tabs and content
-                document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));  // Line: Deactivate all tab buttons
-                document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));  // Line: Hide all tab content
+                document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active')); // Line: Deactivate all tab buttons
+                document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active')); // Line: Hide all tab content
 
                 // Add active class to clicked tab and its content
-                btn.classList.add('active');  // Line: Activate clicked button
-                document.getElementById(btn.dataset.tab + '-tab').classList.add('active');  // Line: Show corresponding content
+                btn.classList.add('active'); // Line: Activate clicked button
+                document.getElementById(btn.dataset.tab + '-tab').classList.add('active'); // Line: Show corresponding content
             });
         });
 
@@ -1052,10 +1053,10 @@ $conn->close();
          * The toast appears at the bottom-right and auto-hides after 3 seconds
          */
         function showToast(message, type = 'success') {
-            const toast = document.getElementById('toast');  // Line: Get toast element
-            toast.textContent = message;  // Line: Set message text
-            toast.className = 'toast ' + type + ' show';  // Line: Add type class and show class
-            setTimeout(() => toast.classList.remove('show'), 3000);  // Line: Auto-hide after 3 seconds
+            const toast = document.getElementById('toast'); // Line: Get toast element
+            toast.textContent = message; // Line: Set message text
+            toast.className = 'toast ' + type + ' show'; // Line: Add type class and show class
+            setTimeout(() => toast.classList.remove('show'), 3000); // Line: Auto-hide after 3 seconds
         }
 
         // =====================================================================
@@ -1068,17 +1069,17 @@ $conn->close();
          * Resets the form and clears the area_id (indicates new record)
          */
         function openAreaModal() {
-            document.getElementById('areaModalTitle').textContent = 'Add New Parking Area';  // Line: Set modal title
-            document.getElementById('areaForm').reset();  // Line: Clear all form fields
-            document.getElementById('area_id').value = '';  // Line: Clear hidden area_id (new mode)
-            document.getElementById('areaModal').classList.add('show');  // Line: Display modal
+            document.getElementById('areaModalTitle').textContent = 'Add New Parking Area'; // Line: Set modal title
+            document.getElementById('areaForm').reset(); // Line: Clear all form fields
+            document.getElementById('area_id').value = ''; // Line: Clear hidden area_id (new mode)
+            document.getElementById('areaModal').classList.add('show'); // Line: Display modal
         }
 
         /**
          * Close the area modal dialog
          */
         function closeAreaModal() {
-            document.getElementById('areaModal').classList.remove('show');  // Line: Hide modal
+            document.getElementById('areaModal').classList.remove('show'); // Line: Hide modal
         }
 
         /**
@@ -1093,14 +1094,14 @@ $conn->close();
          *   - area_status: Status string
          */
         function editArea(area) {
-            document.getElementById('areaModalTitle').textContent = 'Edit Parking Area';  // Line: Set modal title for edit
-            document.getElementById('area_id').value = area.area_id;  // Line: Set hidden ID (edit mode)
-            document.getElementById('area_name').value = area.area_name;  // Line: Pre-fill area name
-            document.getElementById('area_type').value = area.area_type || 'Standard';  // Line: Pre-fill type with default
-            document.getElementById('area_size').value = area.AreaSize || '';  // Line: Pre-fill size
-            document.getElementById('area_color').value = area.area_color || '#a0a0a0';  // Line: Pre-fill color with default gray
-            document.getElementById('area_status').value = area.area_status || 'available';  // Line: Pre-fill status
-            document.getElementById('areaModal').classList.add('show');  // Line: Display modal
+            document.getElementById('areaModalTitle').textContent = 'Edit Parking Area'; // Line: Set modal title for edit
+            document.getElementById('area_id').value = area.area_id; // Line: Set hidden ID (edit mode)
+            document.getElementById('area_name').value = area.area_name; // Line: Pre-fill area name
+            document.getElementById('area_type').value = area.area_type || 'Standard'; // Line: Pre-fill type with default
+            document.getElementById('area_size').value = area.AreaSize || ''; // Line: Pre-fill size
+            document.getElementById('area_color').value = area.area_color || '#a0a0a0'; // Line: Pre-fill color with default gray
+            document.getElementById('area_status').value = area.area_status || 'available'; // Line: Pre-fill status
+            document.getElementById('areaModal').classList.add('show'); // Line: Display modal
         }
 
         /**
@@ -1117,9 +1118,9 @@ $conn->close();
          * @param {Event} e - Form submit event
          */
         async function submitAreaForm(e) {
-            e.preventDefault();  // Line: Stop form from traditional submit
-            const formData = new FormData(document.getElementById('areaForm'));  // Line: Collect all form fields
-            const areaId = formData.get('area_id');  // Line: Check if area_id exists
+            e.preventDefault(); // Line: Stop form from traditional submit
+            const formData = new FormData(document.getElementById('areaForm')); // Line: Collect all form fields
+            const areaId = formData.get('area_id'); // Line: Check if area_id exists
 
             // Line: Append action based on whether this is create or update
             formData.append('action', areaId ? 'update' : 'create');
@@ -1127,29 +1128,29 @@ $conn->close();
             try {
                 // Line: Send POST request to API
                 const response = await fetch('../api/parking_api.php?type=area', {
-                    method: 'POST',  // Line: HTTP method
-                    body: formData  // Line: Form data as body
+                    method: 'POST', // Line: HTTP method
+                    body: formData // Line: Form data as body
                 });
-                const text = await response.text();  // Line: Get raw response text
+                const text = await response.text(); // Line: Get raw response text
 
-                let data;  // Line: Variable for parsed JSON
+                let data; // Line: Variable for parsed JSON
                 try {
-                    data = JSON.parse(text);  // Line: Parse JSON response
+                    data = JSON.parse(text); // Line: Parse JSON response
                 } catch (parseError) {
-                    showToast('Server error: Invalid response', 'error');  // Line: Show error to user
-                    return;  // Line: Exit function
+                    showToast('Server error: Invalid response', 'error'); // Line: Show error to user
+                    return; // Line: Exit function
                 }
 
                 // Line: Handle success or error from API
                 if (data.success) {
-                    showToast(data.message, 'success');  // Line: Show success message
-                    closeAreaModal();  // Line: Close the modal
-                    setTimeout(() => location.reload(), 1000);  // Line: Reload page after 1 second
+                    showToast(data.message, 'success'); // Line: Show success message
+                    closeAreaModal(); // Line: Close the modal
+                    setTimeout(() => location.reload(), 1000); // Line: Reload page after 1 second
                 } else {
-                    showToast(data.message, 'error');  // Line: Show error message
+                    showToast(data.message, 'error'); // Line: Show error message
                 }
             } catch (error) {
-                showToast('An error occurred: ' + error.message, 'error');  // Line: Show error to user
+                showToast('An error occurred: ' + error.message, 'error'); // Line: Show error to user
             }
         }
 
@@ -1164,35 +1165,37 @@ $conn->close();
         async function deleteArea(areaId, areaName) {
             // Line: Show confirmation dialog with warning about cascade delete
             if (!confirm(`Are you sure you want to delete "${areaName}"? This will also delete all parking spaces in this area.`)) {
-                return;  // Line: User cancelled, exit function
+                return; // Line: User cancelled, exit function
             }
 
             try {
                 // Line: Send POST request to delete endpoint
                 const response = await fetch('../api/parking_api.php?type=area', {
-                    method: 'POST',  // Line: HTTP method
-                    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },  // Line: Form content type
-                    body: `action=delete&area_id=${areaId}`  // Line: URL-encoded body
+                    method: 'POST', // Line: HTTP method
+                    headers: {
+                        'Content-Type': 'application/x-www-form-urlencoded'
+                    }, // Line: Form content type
+                    body: `action=delete&area_id=${areaId}` // Line: URL-encoded body
                 });
-                const text = await response.text();  // Line: Get raw response text
+                const text = await response.text(); // Line: Get raw response text
 
-                let data;  // Line: Variable for parsed JSON
+                let data; // Line: Variable for parsed JSON
                 try {
-                    data = JSON.parse(text);  // Line: Parse JSON response
+                    data = JSON.parse(text); // Line: Parse JSON response
                 } catch (parseError) {
-                    showToast('Server error: Invalid response', 'error');  // Line: Show error to user
-                    return;  // Line: Exit function
+                    showToast('Server error: Invalid response', 'error'); // Line: Show error to user
+                    return; // Line: Exit function
                 }
 
                 // Line: Handle success or error from API
                 if (data.success) {
-                    showToast(data.message, 'success');  // Line: Show success message
-                    setTimeout(() => location.reload(), 1000);  // Line: Reload page after 1 second
+                    showToast(data.message, 'success'); // Line: Show success message
+                    setTimeout(() => location.reload(), 1000); // Line: Reload page after 1 second
                 } else {
-                    showToast(data.message, 'error');  // Line: Show error message
+                    showToast(data.message, 'error'); // Line: Show error message
                 }
             } catch (error) {
-                showToast('An error occurred: ' + error.message, 'error');  // Line: Show error to user
+                showToast('An error occurred: ' + error.message, 'error'); // Line: Show error to user
             }
         }
 
@@ -1206,17 +1209,17 @@ $conn->close();
          * Resets the form and clears the space_id (indicates new record)
          */
         function openSpaceModal() {
-            document.getElementById('spaceModalTitle').textContent = 'Add New Parking Space';  // Line: Set modal title
-            document.getElementById('spaceForm').reset();  // Line: Clear all form fields
-            document.getElementById('space_id').value = '';  // Line: Clear hidden space_id (new mode)
-            document.getElementById('spaceModal').classList.add('show');  // Line: Display modal
+            document.getElementById('spaceModalTitle').textContent = 'Add New Parking Space'; // Line: Set modal title
+            document.getElementById('spaceForm').reset(); // Line: Clear all form fields
+            document.getElementById('space_id').value = ''; // Line: Clear hidden space_id (new mode)
+            document.getElementById('spaceModal').classList.add('show'); // Line: Display modal
         }
 
         /**
          * Close the space modal dialog
          */
         function closeSpaceModal() {
-            document.getElementById('spaceModal').classList.remove('show');  // Line: Hide modal
+            document.getElementById('spaceModal').classList.remove('show'); // Line: Hide modal
         }
 
         /**
@@ -1231,24 +1234,24 @@ $conn->close();
          *   - status: Current status
          */
         function editSpace(space) {
-            document.getElementById('spaceModalTitle').textContent = 'Edit Parking Space';  // Line: Set modal title for edit
-            document.getElementById('space_id').value = space.Space_id;  // Line: Set hidden ID (edit mode)
-            document.getElementById('space_area_id').value = space.area_id;  // Line: Pre-fill area dropdown
-            document.getElementById('space_number').value = space.space_number;  // Line: Pre-fill space number
-            document.getElementById('qr_code').value = space.qr_code || '';  // Line: Pre-fill QR code
-            document.getElementById('status').value = space.status || 'available';  // Line: Pre-fill status
-            
+            document.getElementById('spaceModalTitle').textContent = 'Edit Parking Space'; // Line: Set modal title for edit
+            document.getElementById('space_id').value = space.Space_id; // Line: Set hidden ID (edit mode)
+            document.getElementById('space_area_id').value = space.area_id; // Line: Pre-fill area dropdown
+            document.getElementById('space_number').value = space.space_number; // Line: Pre-fill space number
+            document.getElementById('qr_code').value = space.qr_code || ''; // Line: Pre-fill QR code
+            document.getElementById('status').value = space.status || 'available'; // Line: Pre-fill status
+
             // -------------------------------------------------------------------
             // Generate QR Code Preview using external QR API
             // -------------------------------------------------------------------
             // The QR code encodes the scan.php URL with the space number
-            const baseUrl = window.location.origin + '/mawgifi_system';  // Line: Get base URL
-            const qrData = encodeURIComponent(baseUrl + '/modules/booking/scan.php?slot=' + space.space_number);  // Line: Encode scan URL
-            const qrCodeUrl = 'https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=' + qrData;  // Line: Build QR API URL
-            document.getElementById('qr_preview_image').src = qrCodeUrl;  // Line: Set image source
-            document.getElementById('qr_preview_container').style.display = 'block';  // Line: Show QR container
-            
-            document.getElementById('spaceModal').classList.add('show');  // Line: Display modal
+            const baseUrl = window.location.origin + '/mawgifi_system'; // Line: Get base URL
+            const qrData = encodeURIComponent(baseUrl + '/modules/booking/scan.php?slot=' + space.space_number); // Line: Encode scan URL
+            const qrCodeUrl = 'https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=' + qrData; // Line: Build QR API URL
+            document.getElementById('qr_preview_image').src = qrCodeUrl; // Line: Set image source
+            document.getElementById('qr_preview_container').style.display = 'block'; // Line: Show QR container
+
+            document.getElementById('spaceModal').classList.add('show'); // Line: Display modal
         }
 
         /**
@@ -1266,49 +1269,49 @@ $conn->close();
          * @param {Event} e - Form submit event
          */
         async function submitSpaceForm(e) {
-            e.preventDefault();  // Line: Stop form from traditional submit
-            
+            e.preventDefault(); // Line: Stop form from traditional submit
+
             // -------------------------------------------------------------------
             // Validate space count before creating new space
             // -------------------------------------------------------------------
-            const spaceId = document.getElementById('space_id').value;  // Line: Get space ID
-            if (!spaceId) {  // Line: Only validate for new spaces (not updates)
-                const validation = await validateSpaceCount(1);  // Line: Check if 1 more space is allowed
-                if (!validation.valid) {  // Line: If validation failed
-                    showToast(validation.message, 'error');  // Line: Show error message
-                    return;  // Line: Exit function
+            const spaceId = document.getElementById('space_id').value; // Line: Get space ID
+            if (!spaceId) { // Line: Only validate for new spaces (not updates)
+                const validation = await validateSpaceCount(1); // Line: Check if 1 more space is allowed
+                if (!validation.valid) { // Line: If validation failed
+                    showToast(validation.message, 'error'); // Line: Show error message
+                    return; // Line: Exit function
                 }
             }
-            
-            const formData = new FormData(document.getElementById('spaceForm'));  // Line: Collect all form fields
-            formData.append('action', spaceId ? 'update' : 'create');  // Line: Append action type
+
+            const formData = new FormData(document.getElementById('spaceForm')); // Line: Collect all form fields
+            formData.append('action', spaceId ? 'update' : 'create'); // Line: Append action type
 
             try {
                 // Line: Send POST request to API
                 const response = await fetch('../api/parking_api.php?type=space', {
-                    method: 'POST',  // Line: HTTP method
-                    body: formData  // Line: Form data as body
+                    method: 'POST', // Line: HTTP method
+                    body: formData // Line: Form data as body
                 });
-                const text = await response.text();  // Line: Get raw response text
+                const text = await response.text(); // Line: Get raw response text
 
-                let data;  // Line: Variable for parsed JSON
+                let data; // Line: Variable for parsed JSON
                 try {
-                    data = JSON.parse(text);  // Line: Parse JSON response
+                    data = JSON.parse(text); // Line: Parse JSON response
                 } catch (parseError) {
-                    showToast('Server error: Invalid response', 'error');  // Line: Show error to user
-                    return;  // Line: Exit function
+                    showToast('Server error: Invalid response', 'error'); // Line: Show error to user
+                    return; // Line: Exit function
                 }
 
                 // Line: Handle success or error from API
                 if (data.success) {
-                    showToast(data.message, 'success');  // Line: Show success message
-                    closeSpaceModal();  // Line: Close the modal
-                    setTimeout(() => location.reload(), 1000);  // Line: Reload page after 1 second
+                    showToast(data.message, 'success'); // Line: Show success message
+                    closeSpaceModal(); // Line: Close the modal
+                    setTimeout(() => location.reload(), 1000); // Line: Reload page after 1 second
                 } else {
-                    showToast(data.message, 'error');  // Line: Show error message
+                    showToast(data.message, 'error'); // Line: Show error message
                 }
             } catch (error) {
-                showToast('An error occurred: ' + error.message, 'error');  // Line: Show error to user
+                showToast('An error occurred: ' + error.message, 'error'); // Line: Show error to user
             }
         }
 
@@ -1321,35 +1324,37 @@ $conn->close();
         async function deleteSpace(spaceId, spaceNumber) {
             // Line: Show confirmation dialog
             if (!confirm(`Are you sure you want to delete space "${spaceNumber}"?`)) {
-                return;  // Line: User cancelled, exit function
+                return; // Line: User cancelled, exit function
             }
 
             try {
                 // Line: Send POST request to delete endpoint
                 const response = await fetch('../api/parking_api.php?type=space', {
-                    method: 'POST',  // Line: HTTP method
-                    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },  // Line: Form content type
-                    body: `action=delete&space_id=${spaceId}`  // Line: URL-encoded body
+                    method: 'POST', // Line: HTTP method
+                    headers: {
+                        'Content-Type': 'application/x-www-form-urlencoded'
+                    }, // Line: Form content type
+                    body: `action=delete&space_id=${spaceId}` // Line: URL-encoded body
                 });
-                const text = await response.text();  // Line: Get raw response text
+                const text = await response.text(); // Line: Get raw response text
 
-                let data;  // Line: Variable for parsed JSON
+                let data; // Line: Variable for parsed JSON
                 try {
-                    data = JSON.parse(text);  // Line: Parse JSON response
+                    data = JSON.parse(text); // Line: Parse JSON response
                 } catch (parseError) {
-                    showToast('Server error: Invalid response', 'error';  // Line: Show error to user
-                    return;  // Line: Exit function
+                    showToast('Server error: Invalid response', 'error'); // Line: Show error to user
+                    return; // Line: Exit function
                 }
 
                 // Line: Handle success or error from API
                 if (data.success) {
-                    showToast(data.message, 'success');  // Line: Show success message
-                    setTimeout(() => location.reload(), 1000);  // Line: Reload page after 1 second
+                    showToast(data.message, 'success'); // Line: Show success message
+                    setTimeout(() => location.reload(), 1000); // Line: Reload page after 1 second
                 } else {
-                    showToast(data.message, 'error');  // Line: Show error message
+                    showToast(data.message, 'error'); // Line: Show error message
                 }
             } catch (error) {
-                showToast('An error occurred', 'error');  // Line: Show generic error
+                showToast('An error occurred', 'error'); // Line: Show generic error
             }
         }
 
@@ -1363,16 +1368,16 @@ $conn->close();
          * Resets the form and updates the preview display
          */
         function openBulkSpaceModal() {
-            document.getElementById('bulkSpaceForm').reset();  // Line: Clear all form fields
-            updateBulkPreview();  // Line: Update the preview text
-            document.getElementById('bulkSpaceModal').classList.add('show');  // Line: Display modal
+            document.getElementById('bulkSpaceForm').reset(); // Line: Clear all form fields
+            updateBulkPreview(); // Line: Update the preview text
+            document.getElementById('bulkSpaceModal').classList.add('show'); // Line: Display modal
         }
 
         /**
          * Close the bulk space creation modal
          */
         function closeBulkSpaceModal() {
-            document.getElementById('bulkSpaceModal').classList.remove('show');  // Line: Hide modal
+            document.getElementById('bulkSpaceModal').classList.remove('show'); // Line: Hide modal
         }
 
         /**
@@ -1384,14 +1389,14 @@ $conn->close();
          * Called automatically when prefix, start, or end inputs change
          */
         function updateBulkPreview() {
-            const prefix = document.getElementById('bulk_prefix').value || 'X';  // Line: Get prefix with fallback
-            const start = parseInt(document.getElementById('bulk_start').value) || 1;  // Line: Parse start number
-            const end = parseInt(document.getElementById('bulk_end').value) || 1;  // Line: Parse end number
-            const count = Math.max(0, end - start + 1);  // Line: Calculate number of spaces (minimum 0)
+            const prefix = document.getElementById('bulk_prefix').value || 'X'; // Line: Get prefix with fallback
+            const start = parseInt(document.getElementById('bulk_start').value) || 1; // Line: Parse start number
+            const end = parseInt(document.getElementById('bulk_end').value) || 1; // Line: Parse end number
+            const count = Math.max(0, end - start + 1); // Line: Calculate number of spaces (minimum 0)
 
             // Line: Format start and end numbers with zero-padding
-            const startStr = prefix + '-' + String(start).padStart(2, '0');  // Line: e.g., "A-01"
-            const endStr = prefix + '-' + String(end).padStart(2, '0');  // Line: e.g., "A-14"
+            const startStr = prefix + '-' + String(start).padStart(2, '0'); // Line: e.g., "A-01"
+            const endStr = prefix + '-' + String(end).padStart(2, '0'); // Line: e.g., "A-14"
 
             // Line: Update preview text in modal
             document.getElementById('bulk_preview').textContent =
@@ -1402,9 +1407,9 @@ $conn->close();
         // EVENT LISTENERS FOR LIVE PREVIEW UPDATE
         // -------------------------------------------------------------------
         // Automatically update preview when user types in any field
-        document.getElementById('bulk_prefix').addEventListener('input', updateBulkPreview);  // Line: Listen for prefix changes
-        document.getElementById('bulk_start').addEventListener('input', updateBulkPreview);  // Line: Listen for start changes
-        document.getElementById('bulk_end').addEventListener('input', updateBulkPreview);  // Line: Listen for end changes
+        document.getElementById('bulk_prefix').addEventListener('input', updateBulkPreview); // Line: Listen for prefix changes
+        document.getElementById('bulk_start').addEventListener('input', updateBulkPreview); // Line: Listen for start changes
+        document.getElementById('bulk_end').addEventListener('input', updateBulkPreview); // Line: Listen for end changes
 
         /**
          * Handle bulk space creation form submission
@@ -1421,50 +1426,50 @@ $conn->close();
          * @param {Event} e - Form submit event
          */
         async function submitBulkSpaceForm(e) {
-            e.preventDefault();  // Line: Stop form from traditional submit
-            
+            e.preventDefault(); // Line: Stop form from traditional submit
+
             // -------------------------------------------------------------------
             // Calculate space count and validate
             // -------------------------------------------------------------------
-            const start = parseInt(document.getElementById('bulk_start').value) || 1;  // Line: Get start number
-            const end = parseInt(document.getElementById('bulk_end').value) || 1;  // Line: Get end number
-            const count = Math.max(0, end - start + 1);  // Line: Calculate number of spaces
-            
-            const validation = await validateSpaceCount(count);  // Line: Check if count is allowed
-            if (!validation.valid) {  // Line: If validation failed
-                showToast(validation.message, 'error');  // Line: Show error message
-                return;  // Line: Exit function
+            const start = parseInt(document.getElementById('bulk_start').value) || 1; // Line: Get start number
+            const end = parseInt(document.getElementById('bulk_end').value) || 1; // Line: Get end number
+            const count = Math.max(0, end - start + 1); // Line: Calculate number of spaces
+
+            const validation = await validateSpaceCount(count); // Line: Check if count is allowed
+            if (!validation.valid) { // Line: If validation failed
+                showToast(validation.message, 'error'); // Line: Show error message
+                return; // Line: Exit function
             }
-            
-            const formData = new FormData(document.getElementById('bulkSpaceForm'));  // Line: Collect all form fields
-            formData.append('action', 'bulk_create');  // Line: Set action to bulk_create
+
+            const formData = new FormData(document.getElementById('bulkSpaceForm')); // Line: Collect all form fields
+            formData.append('action', 'bulk_create'); // Line: Set action to bulk_create
 
             try {
                 // Line: Send POST request to API
                 const response = await fetch('../api/parking_api.php?type=space', {
-                    method: 'POST',  // Line: HTTP method
-                    body: formData  // Line: Form data as body
+                    method: 'POST', // Line: HTTP method
+                    body: formData // Line: Form data as body
                 });
-                const text = await response.text();  // Line: Get raw response text
+                const text = await response.text(); // Line: Get raw response text
 
-                let data;  // Line: Variable for parsed JSON
+                let data; // Line: Variable for parsed JSON
                 try {
-                    data = JSON.parse(text);  // Line: Parse JSON response
+                    data = JSON.parse(text); // Line: Parse JSON response
                 } catch (parseError) {
-                    showToast('Server error: Invalid response', 'error';  // Line: Show error to user
-                    return;  // Line: Exit function
+                    showToast('Server error: Invalid response', 'error'); // Line: Show error to user
+                    return; // Line: Exit function
                 }
 
                 // Line: Handle success or error from API
                 if (data.success) {
-                    showToast(data.message, 'success');  // Line: Show success message (includes created/skipped counts)
-                    closeBulkSpaceModal();  // Line: Close the modal
-                    setTimeout(() => location.reload(), 1000);  // Line: Reload page after 1 second
+                    showToast(data.message, 'success'); // Line: Show success message (includes created/skipped counts)
+                    closeBulkSpaceModal(); // Line: Close the modal
+                    setTimeout(() => location.reload(), 1000); // Line: Reload page after 1 second
                 } else {
-                    showToast(data.message, 'error');  // Line: Show error message
+                    showToast(data.message, 'error'); // Line: Show error message
                 }
             } catch (error) {
-                showToast('An error occurred: ' + error.message, 'error');  // Line: Show error to user
+                showToast('An error occurred: ' + error.message, 'error'); // Line: Show error to user
             }
         }
 
@@ -1472,10 +1477,10 @@ $conn->close();
         // MODAL CLOSE ON OUTSIDE CLICK
         // -------------------------------------------------------------------
         // Close any modal when user clicks outside the modal content area
-        document.querySelectorAll('.modal').forEach(modal => {  // Line: Loop through all modals
-            modal.addEventListener('click', (e) => {  // Line: Add click handler
-                if (e.target === modal) {  // Line: If click was on backdrop (not content)
-                    modal.classList.remove('show');  // Line: Hide the modal
+        document.querySelectorAll('.modal').forEach(modal => { // Line: Loop through all modals
+            modal.addEventListener('click', (e) => { // Line: Add click handler
+                if (e.target === modal) { // Line: If click was on backdrop (not content)
+                    modal.classList.remove('show'); // Line: Hide the modal
                 }
             });
         });
@@ -1493,31 +1498,31 @@ $conn->close();
          * - Red: 100 spaces (at limit)
          */
         function updateTotalSpaceCount() {
-            fetch('../api/parking_api.php?type=stats')  // Line: Fetch stats from API
-                .then(response => response.json())  // Line: Parse JSON response
+            fetch('../api/parking_api.php?type=stats') // Line: Fetch stats from API
+                .then(response => response.json()) // Line: Parse JSON response
                 .then(data => {
-                    if (data.success) {  // Line: If API call succeeded
-                        const totalSpaces = data.total_spaces || 0;  // Line: Get total count with default 0
-                        const countElement = document.getElementById('totalSpaceCount');  // Line: Get counter element
-                        countElement.textContent = totalSpaces;  // Line: Update displayed count
-                        
+                    if (data.success) { // Line: If API call succeeded
+                        const totalSpaces = data.total_spaces || 0; // Line: Get total count with default 0
+                        const countElement = document.getElementById('totalSpaceCount'); // Line: Get counter element
+                        countElement.textContent = totalSpaces; // Line: Update displayed count
+
                         // -----------------------------------------------------------
                         // Change background color based on usage level
                         // -----------------------------------------------------------
-                        const parent = countElement.parentElement.parentElement;  // Line: Get parent container
-                        if (totalSpaces >= 100) {  // Line: At limit
-                            parent.style.background = '#fee2e2';  // Line: Red background
-                            parent.style.borderColor = '#ef4444';  // Line: Red border
-                        } else if (totalSpaces >= 90) {  // Line: Near limit
-                            parent.style.background = '#fef3c7';  // Line: Yellow background
-                            parent.style.borderColor = '#f59e0b';  // Line: Yellow border
-                        } else {  // Line: Under 90
-                            parent.style.background = '#d1fae5';  // Line: Green background
-                            parent.style.borderColor = '#10b981';  // Line: Green border
+                        const parent = countElement.parentElement.parentElement; // Line: Get parent container
+                        if (totalSpaces >= 100) { // Line: At limit
+                            parent.style.background = '#fee2e2'; // Line: Red background
+                            parent.style.borderColor = '#ef4444'; // Line: Red border
+                        } else if (totalSpaces >= 90) { // Line: Near limit
+                            parent.style.background = '#fef3c7'; // Line: Yellow background
+                            parent.style.borderColor = '#f59e0b'; // Line: Yellow border
+                        } else { // Line: Under 90
+                            parent.style.background = '#d1fae5'; // Line: Green background
+                            parent.style.borderColor = '#10b981'; // Line: Green border
                         }
                     }
                 })
-                .catch(error => {});  // Line: Handle any errors silently
+                .catch(error => {}); // Line: Handle any errors silently
         }
 
         /**
@@ -1533,30 +1538,34 @@ $conn->close();
          */
         async function validateSpaceCount(newSpaceCount) {
             try {
-                const response = await fetch('../api/parking_api.php?type=stats');  // Line: Fetch stats
-                const data = await response.json();  // Line: Parse JSON
-                if (data.success) {  // Line: If API succeeded
-                    const currentTotal = data.total_spaces || 0;  // Line: Get current count
-                    if (currentTotal + newSpaceCount > 100) {  // Line: Would exceed limit?
-                        return {  // Line: Return failure result
-                            valid: false,  // Line: Validation failed
-                            message: `Cannot create ${newSpaceCount} space(s). Current total: ${currentTotal}, would exceed 100 space limit.`  // Line: Error message
+                const response = await fetch('../api/parking_api.php?type=stats'); // Line: Fetch stats
+                const data = await response.json(); // Line: Parse JSON
+                if (data.success) { // Line: If API succeeded
+                    const currentTotal = data.total_spaces || 0; // Line: Get current count
+                    if (currentTotal + newSpaceCount > 100) { // Line: Would exceed limit?
+                        return { // Line: Return failure result
+                            valid: false, // Line: Validation failed
+                            message: `Cannot create ${newSpaceCount} space(s). Current total: ${currentTotal}, would exceed 100 space limit.` // Line: Error message
                         };
                     }
-                    return { valid: true };  // Line: Validation passed
+                    return {
+                        valid: true
+                    }; // Line: Validation passed
                 }
             } catch (error) {
                 // Handle validation errors silently
             }
-            return { valid: true };  // Line: Allow if validation fails (fail-open)
+            return {
+                valid: true
+            }; // Line: Allow if validation fails (fail-open)
         }
 
         // =====================================================================
         // INITIALIZATION
         // =====================================================================
         // Run on page load
-        
-        updateTotalSpaceCount();  // Line: Fetch and display initial space count
+
+        updateTotalSpaceCount(); // Line: Fetch and display initial space count
     </script>
 </body>
 
