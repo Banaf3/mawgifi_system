@@ -147,6 +147,35 @@ $row = $result->fetch_assoc();
 $rejected_count = $row['count'];
 $stmt->close();
 
+// Get stats for charts
+$total_students = 0;
+$stmt = $conn->prepare("SELECT COUNT(*) as count FROM User WHERE UserType = 'user'");
+$stmt->execute();
+$result = $stmt->get_result();
+$row = $result->fetch_assoc();
+$total_students = $row['count'];
+$stmt->close();
+
+$total_staff = 0;
+$stmt = $conn->prepare("SELECT COUNT(*) as count FROM User WHERE UserType = 'staff'");
+$stmt->execute();
+$result = $stmt->get_result();
+$row = $result->fetch_assoc();
+$total_staff = $row['count'];
+$stmt->close();
+
+// Vehicles by Type
+$vehicle_types = [];
+$vehicle_counts = [];
+$stmt = $conn->prepare("SELECT vehicle_type, COUNT(*) as count FROM Vehicle GROUP BY vehicle_type");
+$stmt->execute();
+$result = $stmt->get_result();
+while ($row = $result->fetch_assoc()) {
+    $vehicle_types[] = $row['vehicle_type'];
+    $vehicle_counts[] = $row['count'];
+}
+$stmt->close();
+
 closeDBConnection($conn);
 ?>
 <!DOCTYPE html>
@@ -229,6 +258,55 @@ closeDBConnection($conn);
                     <div class="stat-label">Rejected Requests</div>
                 </div>
             </div>
+
+            <!-- Charts Section -->
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px; margin-top: 30px;">
+                <!-- Users Distribution Chart -->
+                <div style="background: white; padding: 20px; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
+                    <h3 style="margin-bottom: 15px; text-align: center; color: #2d3748;">Users Distribution</h3>
+                    <canvas id="usersChart"></canvas>
+                </div>
+
+                <!-- Vehicles by Type Chart -->
+                <div style="background: white; padding: 20px; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
+                    <h3 style="margin-bottom: 15px; text-align: center; color: #2d3748;">Vehicles by Type</h3>
+                    <canvas id="vehiclesChart"></canvas>
+                </div>
+            </div>
+
+            <!-- Chart.js CDN -->
+            <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+            <script>
+                // Users Chart
+                const ctxUsers = document.getElementById('usersChart').getContext('2d');
+                new Chart(ctxUsers, {
+                    type: 'doughnut',
+                    data: {
+                        labels: ['Students', 'Staff'],
+                        datasets: [{
+                            data: [<?php echo $total_students; ?>, <?php echo $total_staff; ?>],
+                            backgroundColor: ['#4299e1', '#48bb78'],
+                            borderWidth: 0
+                        }]
+                    },
+                    options: { responsive: true }
+                });
+
+                // Vehicles Chart
+                const ctxVehicles = document.getElementById('vehiclesChart').getContext('2d');
+                new Chart(ctxVehicles, {
+                    type: 'pie',
+                    data: {
+                        labels: <?php echo json_encode($vehicle_types); ?>,
+                        datasets: [{
+                            data: <?php echo json_encode($vehicle_counts); ?>,
+                            backgroundColor: ['#ed8936', '#9f7aea', '#38b2ac', '#f56565'],
+                            borderWidth: 0
+                        }]
+                    },
+                    options: { responsive: true }
+                });
+            </script>
 
         <?php elseif ($current_view === 'profile'): ?>
             <!-- Profile View -->
@@ -315,6 +393,11 @@ closeDBConnection($conn);
                 <!-- Pending Requests -->
                 <div class="section">
                     <h2>Pending Requests <span class="badge"><?php echo count($pending_vehicles); ?></span></h2>
+
+                    <div style="margin-bottom: 20px; position: relative; max-width: 100%;">
+                        <span style="position: absolute; left: 15px; top: 50%; transform: translateY(-50%); color: #38bdf8; font-size: 18px;">🔍</span>
+                        <input type="text" id="vehicleSearch" placeholder="Search by slot, vehicle, user..." onkeyup="filterVehicles()" style="padding: 15px 15px 15px 45px; border: 2px solid #e2e8f0; border-radius: 12px; font-size: 14px; width: 100%; box-sizing: border-box; outline: none; transition: border-color 0.3s;" onfocus="this.style.borderColor='#38bdf8'" onblur="this.style.borderColor='#e2e8f0'">
+                    </div>
 
                     <?php if (empty($pending_vehicles)): ?>
                         <div class="no-data">
@@ -449,6 +532,29 @@ closeDBConnection($conn);
             var modal = document.getElementById('rejectVehicleModal');
             if (event.target === modal) {
                 closeRejectModal();
+            }
+        }
+
+        // Filter vehicles
+        function filterVehicles() {
+            var input = document.getElementById('vehicleSearch');
+            var filter = input.value.toLowerCase();
+            
+            // Filter pending vehicle cards
+            var cards = document.querySelectorAll('.vehicle-card');
+            cards.forEach(function(card) {
+                var text = card.textContent.toLowerCase();
+                card.style.display = text.includes(filter) ? '' : 'none';
+            });
+            
+            // Filter approved vehicles table
+            var table = document.querySelector('.vehicles-table');
+            if (table) {
+                var rows = table.querySelectorAll('tbody tr');
+                rows.forEach(function(row) {
+                    var text = row.textContent.toLowerCase();
+                    row.style.display = text.includes(filter) ? '' : 'none';
+                });
             }
         }
     </script>

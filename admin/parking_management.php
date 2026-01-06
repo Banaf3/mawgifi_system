@@ -537,6 +537,12 @@ $conn->close();
                         ➕ Add New Area
                     </button>
                 </div>
+                <div style="padding: 0 20px 20px 20px;">
+                    <div style="position: relative; max-width: 100%;">
+                        <span style="position: absolute; left: 15px; top: 50%; transform: translateY(-50%); color: #38bdf8; font-size: 18px;">🔍</span>
+                        <input type="text" id="areaSearch" placeholder="Search by slot, vehicle, user..." onkeyup="filterAreas()" style="padding: 15px 15px 15px 45px; border: 2px solid #e2e8f0; border-radius: 12px; font-size: 14px; width: 100%; box-sizing: border-box; outline: none; transition: border-color 0.3s;" onfocus="this.style.borderColor='#38bdf8'" onblur="this.style.borderColor='#e2e8f0'">
+                    </div>
+                </div>
                 <div class="table-container">
                     <?php if (empty($areas)): ?>
                         <div class="empty-state">
@@ -623,6 +629,12 @@ $conn->close();
                         <button type="button" class="btn btn-primary" onclick="openSpaceModal()">
                             ➕ Add New Space
                         </button>
+                    </div>
+                </div>
+                <div style="padding: 0 20px 20px 20px;">
+                    <div style="position: relative; max-width: 100%;">
+                        <span style="position: absolute; left: 15px; top: 50%; transform: translateY(-50%); color: #38bdf8; font-size: 18px;">🔍</span>
+                        <input type="text" id="spaceSearch" placeholder="Search by slot, vehicle, user..." onkeyup="filterSpaces()" style="padding: 15px 15px 15px 45px; border: 2px solid #e2e8f0; border-radius: 12px; font-size: 14px; width: 100%; box-sizing: border-box; outline: none; transition: border-color 0.3s;" onfocus="this.style.borderColor='#38bdf8'" onblur="this.style.borderColor='#e2e8f0'">
                     </div>
                 </div>
                 <div class="table-container">
@@ -1205,6 +1217,34 @@ $conn->close();
 
         // Initialize
         updateTotalSpaceCount();
+
+        // Filter parking areas
+        function filterAreas() {
+            var input = document.getElementById('areaSearch');
+            var filter = input.value.toLowerCase();
+            var table = document.querySelector('#areas-tab table');
+            if (!table) return;
+            var rows = table.querySelectorAll('tbody tr');
+            
+            rows.forEach(function(row) {
+                var text = row.textContent.toLowerCase();
+                row.style.display = text.includes(filter) ? '' : 'none';
+            });
+        }
+
+        // Filter parking spaces
+        function filterSpaces() {
+            var input = document.getElementById('spaceSearch');
+            var filter = input.value.toLowerCase();
+            var table = document.querySelector('#spaces-tab table');
+            if (!table) return;
+            var rows = table.querySelectorAll('tbody tr');
+            
+            rows.forEach(function(row) {
+                var text = row.textContent.toLowerCase();
+                row.style.display = text.includes(filter) ? '' : 'none';
+            });
+        }
     </script>
 </body>
 

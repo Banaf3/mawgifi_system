@@ -397,6 +397,10 @@ closeDBConnection($conn);
                 <?php endif; ?>
 
                 <div class="table-container">
+                    <div style="margin-bottom: 20px; position: relative; max-width: 100%;">
+                        <span style="position: absolute; left: 15px; top: 50%; transform: translateY(-50%); color: #38bdf8; font-size: 18px;">🔍</span>
+                        <input type="text" id="userSearch" placeholder="Search by slot, vehicle, user..." onkeyup="filterUsers()" style="padding: 15px 15px 15px 45px; border: 2px solid #e2e8f0; border-radius: 12px; font-size: 14px; width: 100%; box-sizing: border-box; outline: none; transition: border-color 0.3s;" onfocus="this.style.borderColor='#38bdf8'" onblur="this.style.borderColor='#e2e8f0'">
+                    </div>
                     <table class="data-table">
                         <thead>
                             <tr>
@@ -487,6 +491,20 @@ closeDBConnection($conn);
                     if (event.target == modal) {
                         modal.style.display = 'none';
                     }
+                }
+
+                // Filter users table
+                function filterUsers() {
+                    var input = document.getElementById('userSearch');
+                    var filter = input.value.toLowerCase();
+                    var table = document.querySelector('.data-table');
+                    if (!table) return;
+                    var rows = table.querySelectorAll('tbody tr');
+                    
+                    rows.forEach(function(row) {
+                        var text = row.textContent.toLowerCase();
+                        row.style.display = text.includes(filter) ? '' : 'none';
+                    });
                 }
             </script>
 
