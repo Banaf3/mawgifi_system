@@ -45,8 +45,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['reject_vehicle'])) {
     if (empty($rejection_reason)) {
         $error_message = "Please provide a reason for rejection.";
     } else {
-        $stmt = $conn->prepare("UPDATE Vehicle SET status = 'rejected' WHERE vehicle_id = ? AND status = 'pending'");
-        $stmt->bind_param("i", $vehicle_id);
+        $stmt = $conn->prepare("UPDATE Vehicle SET status = 'rejected', rejection_reason = ? WHERE vehicle_id = ? AND status = 'pending'");
+        $stmt->bind_param("si", $rejection_reason, $vehicle_id);
 
         if ($stmt->execute() && $stmt->affected_rows > 0) {
             $success_message = "Vehicle rejected.";
