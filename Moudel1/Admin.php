@@ -113,6 +113,30 @@ while ($row = $result->fetch_assoc()) {
 }
 $stmt->close();
 
+// Reports Data: Parking Spaces Status
+$spaces_available = 0;
+$spaces_booked = 0;
+$spaces_maintenance = 0;
+$result = $conn->query("SELECT status, COUNT(*) as count FROM ParkingSpace GROUP BY status");
+if ($result) {
+    while ($row = $result->fetch_assoc()) {
+        if ($row['status'] === 'available') $spaces_available = $row['count'];
+        elseif ($row['status'] === 'occupied' || $row['status'] === 'reserved') $spaces_booked += $row['count'];
+        elseif ($row['status'] === 'maintenance') $spaces_maintenance = $row['count'];
+    }
+}
+
+// Reports Data: Parking Areas Status
+$areas_available = 0;
+$areas_closed = 0;
+$result = $conn->query("SELECT area_status, COUNT(*) as count FROM ParkingArea GROUP BY area_status");
+if ($result) {
+    while ($row = $result->fetch_assoc()) {
+        if ($row['area_status'] === 'available') $areas_available = $row['count'];
+        else $areas_closed += $row['count'];
+    }
+}
+
 // Handle delete user
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['delete_user'])) {
     $delete_id = intval($_POST['delete_user_id']);
@@ -557,6 +581,18 @@ closeDBConnection($conn);
                             <canvas id="bookingsChart"></canvas>
                         </div>
                     </div>
+
+                    <!-- Chart 4: Parking Spaces -->
+                    <div style="background: white; padding: 20px; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
+                        <h3 style="margin-bottom: 15px; text-align: center;">Parking Spaces Status</h3>
+                        <canvas id="spacesChart"></canvas>
+                    </div>
+
+                    <!-- Chart 5: Parking Areas -->
+                    <div style="background: white; padding: 20px; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
+                        <h3 style="margin-bottom: 15px; text-align: center;">Parking Areas Status</h3>
+                        <canvas id="areasChart"></canvas>
+                    </div>
                 </div>
             </div>
 
@@ -615,6 +651,36 @@ closeDBConnection($conn);
                             x: { grid: { display: false } }
                         }
                     }
+                });
+
+                // Parking Spaces Chart
+                const ctxSpaces = document.getElementById('spacesChart').getContext('2d');
+                new Chart(ctxSpaces, {
+                    type: 'doughnut',
+                    data: {
+                        labels: ['Available', 'Booked/Reserved', 'Maintenance'],
+                        datasets: [{
+                            data: [<?php echo $spaces_available; ?>, <?php echo $spaces_booked; ?>, <?php echo $spaces_maintenance; ?>],
+                            backgroundColor: ['#48bb78', '#f56565', '#ed8936'],
+                            borderWidth: 0
+                        }]
+                    },
+                    options: { responsive: true }
+                });
+
+                // Parking Areas Chart
+                const ctxAreas = document.getElementById('areasChart').getContext('2d');
+                new Chart(ctxAreas, {
+                    type: 'doughnut',
+                    data: {
+                        labels: ['Available', 'Closed/Maintenance'],
+                        datasets: [{
+                            data: [<?php echo $areas_available; ?>, <?php echo $areas_closed; ?>],
+                            backgroundColor: ['#4299e1', '#e53e3e'],
+                            borderWidth: 0
+                        }]
+                    },
+                    options: { responsive: true }
                 });
             </script>
         <?php endif; ?>
