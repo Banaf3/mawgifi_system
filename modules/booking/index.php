@@ -711,6 +711,17 @@ $conn->close();
                                     🕐 <?php echo date('g:i A', strtotime($booking['booking_start'])); ?> -
                                     <?php echo date('g:i A', strtotime($booking['booking_end'])); ?>
                                 </div>
+                                <?php if (!empty($booking['check_in_time']) || !empty($booking['check_out_time'])): ?>
+                                <div class="booking-time" style="margin-top: 5px; background: #e6fffa;">
+                                    <?php if (!empty($booking['check_in_time'])): ?>
+                                        ✅ Check-in: <?php echo date('g:i A', strtotime($booking['check_in_time'])); ?>
+                                    <?php endif; ?>
+                                    <?php if (!empty($booking['check_in_time']) && !empty($booking['check_out_time'])): ?> • <?php endif; ?>
+                                    <?php if (!empty($booking['check_out_time'])): ?>
+                                        🚪 Check-out: <?php echo date('g:i A', strtotime($booking['check_out_time'])); ?>
+                                    <?php endif; ?>
+                                </div>
+                                <?php endif; ?>
                             </div>
                             <span class="status-badge completed">Completed</span>
                             <div class="booking-actions">
