@@ -104,14 +104,69 @@ $stmt->close();
 // Reports Data: Bookings by Status
 $booking_statuses = [];
 $booking_counts = [];
-$stmt = $conn->prepare("SELECT status, COUNT(*) as count FROM Booking GROUP BY status");
+$pending_count = 0;
+$checked_in_count = 0;
+$completed_count = 0;
+
+// Fetch all bookings to process status and expiration
+$stmt = $conn->prepare("SELECT status, booking_end FROM Booking");
 $stmt->execute();
 $result = $stmt->get_result();
+
+$raw_booking_data = [];
 while ($row = $result->fetch_assoc()) {
-    $booking_statuses[] = ucfirst($row['status']);
-    $booking_counts[] = $row['count'];
+    $raw_booking_data[] = $row;
 }
 $stmt->close();
+
+$aggregated_counts = [
+    'pending' => 0,
+    'checked_in' => 0,
+    'completed' => 0,
+    'expired' => 0 // For internal tracking, will be merged into completed
+];
+
+foreach ($raw_booking_data as $booking) {
+    $status = strtolower($booking['status']);
+    $booking_end_timestamp = strtotime($booking['booking_end']);
+    $current_timestamp = time();
+
+    // Only PENDING bookings can expire. Checked-in bookings remain Active until checked out/completed.
+    $is_expired = ($booking_end_timestamp < $current_timestamp) && ($status === 'pending');
+
+    if ($is_expired) {
+        $aggregated_counts['expired']++;
+    } elseif ($status === 'pending') {
+        $aggregated_counts['pending']++;
+    } elseif ($status === 'checked_in') {
+        $aggregated_counts['checked_in']++;
+    } elseif ($status === 'completed') {
+        $aggregated_counts['completed']++;
+    }
+}
+
+// Merge expired into completed
+$aggregated_counts['completed'] += $aggregated_counts['expired'];
+
+// Assign to variables for display
+$pending_count = $aggregated_counts['pending'];
+$checked_in_count = $aggregated_counts['checked_in'];
+$completed_count = $aggregated_counts['completed'];
+
+// Prepare data for chart (only non-zero counts)
+if ($pending_count > 0) {
+    $booking_statuses[] = 'Pending';
+    $booking_counts[] = $pending_count;
+}
+if ($checked_in_count > 0) {
+    $booking_statuses[] = 'Checked In';
+    $booking_counts[] = $checked_in_count;
+}
+if ($completed_count > 0) {
+    $booking_statuses[] = 'Completed';
+    $booking_counts[] = $completed_count;
+}
+
 
 // Reports Data: Parking Spaces Status
 $spaces_available = 0;
@@ -120,9 +175,12 @@ $spaces_maintenance = 0;
 $result = $conn->query("SELECT status, COUNT(*) as count FROM ParkingSpace GROUP BY status");
 if ($result) {
     while ($row = $result->fetch_assoc()) {
-        if ($row['status'] === 'available') $spaces_available = $row['count'];
-        elseif ($row['status'] === 'occupied' || $row['status'] === 'reserved') $spaces_booked += $row['count'];
-        elseif ($row['status'] === 'maintenance') $spaces_maintenance = $row['count'];
+        if ($row['status'] === 'available')
+            $spaces_available = $row['count'];
+        elseif ($row['status'] === 'occupied' || $row['status'] === 'reserved')
+            $spaces_booked += $row['count'];
+        elseif ($row['status'] === 'maintenance')
+            $spaces_maintenance = $row['count'];
     }
 }
 
@@ -132,8 +190,10 @@ $areas_closed = 0;
 $result = $conn->query("SELECT area_status, COUNT(*) as count FROM ParkingArea GROUP BY area_status");
 if ($result) {
     while ($row = $result->fetch_assoc()) {
-        if ($row['area_status'] === 'available') $areas_available = $row['count'];
-        else $areas_closed += $row['count'];
+        if ($row['area_status'] === 'available')
+            $areas_available = $row['count'];
+        else
+            $areas_closed += $row['count'];
     }
 }
 
@@ -398,8 +458,12 @@ closeDBConnection($conn);
 
                 <div class="table-container">
                     <div style="margin-bottom: 20px; position: relative; max-width: 100%;">
-                        <span style="position: absolute; left: 15px; top: 50%; transform: translateY(-50%); color: #38bdf8; font-size: 18px;">🔍</span>
-                        <input type="text" id="userSearch" placeholder="Search by slot, vehicle, user..." onkeyup="filterUsers()" style="padding: 15px 15px 15px 45px; border: 2px solid #e2e8f0; border-radius: 12px; font-size: 14px; width: 100%; box-sizing: border-box; outline: none; transition: border-color 0.3s;" onfocus="this.style.borderColor='#38bdf8'" onblur="this.style.borderColor='#e2e8f0'">
+                        <span
+                            style="position: absolute; left: 15px; top: 50%; transform: translateY(-50%); color: #38bdf8; font-size: 18px;">🔍</span>
+                        <input type="text" id="userSearch" placeholder="Search by slot, vehicle, user..."
+                            onkeyup="filterUsers()"
+                            style="padding: 15px 15px 15px 45px; border: 2px solid #e2e8f0; border-radius: 12px; font-size: 14px; width: 100%; box-sizing: border-box; outline: none; transition: border-color 0.3s;"
+                            onfocus="this.style.borderColor='#38bdf8'" onblur="this.style.borderColor='#e2e8f0'">
                     </div>
                     <table class="data-table">
                         <thead>
@@ -500,8 +564,8 @@ closeDBConnection($conn);
                     var table = document.querySelector('.data-table');
                     if (!table) return;
                     var rows = table.querySelectorAll('tbody tr');
-                    
-                    rows.forEach(function(row) {
+
+                    rows.forEach(function (row) {
                         var text = row.textContent.toLowerCase();
                         row.style.display = text.includes(filter) ? '' : 'none';
                     });
@@ -578,36 +642,74 @@ closeDBConnection($conn);
             </div>
 
             <div class="content-area">
+
+                <!-- Booking Stats Cards -->
+                <div style="display: flex; gap: 20px; margin-bottom: 30px; flex-wrap: wrap;">
+                    <div class="stat-card"
+                        style="flex: 1; min-width: 200px; background: white; padding: 20px; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); text-align: center;">
+                        <div style="font-size: 2.5rem; font-weight: 800; color: #4299e1; margin-bottom: 5px;">
+                            <?php echo $pending_count ?? 0; ?>
+                        </div>
+                        <div style="color: #718096; font-size: 0.9rem; font-weight: 600;">Upcoming Bookings</div>
+                    </div>
+                    <div class="stat-card"
+                        style="flex: 1; min-width: 200px; background: white; padding: 20px; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); text-align: center;">
+                        <div style="font-size: 2.5rem; font-weight: 800; color: #48bb78; margin-bottom: 5px;">
+                            <?php echo $checked_in_count ?? 0; ?>
+                        </div>
+                        <div style="color: #718096; font-size: 0.9rem; font-weight: 600;">Active Bookings</div>
+                    </div>
+                    <div class="stat-card"
+                        style="flex: 1; min-width: 200px; background: white; padding: 20px; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); text-align: center;">
+                        <div style="font-size: 2.5rem; font-weight: 800; color: #a0aec0; margin-bottom: 5px;">
+                            <?php echo $completed_count ?? 0; ?>
+                        </div>
+                        <div style="color: #718096; font-size: 0.9rem; font-weight: 600;">Past Bookings</div>
+                    </div>
+                </div>
+
                 <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(400px, 1fr)); gap: 20px;">
-                    
+                    <!-- NEW Chart: Bookings Pie -->
+                    <div
+                        style="background: white; padding: 20px; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
+                        <h3 style="margin-bottom: 15px; text-align: center;">Booking Status Distribution</h3>
+                        <canvas id="bookingsPieChart"></canvas>
+                    </div>
                     <!-- Chart 1: Users -->
-                    <div style="background: white; padding: 20px; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
+                    <div
+                        style="background: white; padding: 20px; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
                         <h3 style="margin-bottom: 15px; text-align: center;">Users Distribution</h3>
                         <canvas id="usersChart"></canvas>
                     </div>
 
                     <!-- Chart 2: Vehicles -->
-                    <div style="background: white; padding: 20px; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
+                    <div
+                        style="background: white; padding: 20px; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
                         <h3 style="margin-bottom: 15px; text-align: center;">Vehicles by Type</h3>
                         <canvas id="vehiclesChart"></canvas>
                     </div>
 
                     <!-- Chart 3: Bookings -->
-                    <div style="background: white; padding: 20px; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); grid-column: 1 / -1;">
-                        <h3 style="margin-bottom: 15px; text-align: center;">Booking Statuses</h3>
+                    <div
+                        style="background: white; padding: 20px; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); grid-column: 1 / -1;">
+                        <h3 style="margin-bottom: 15px; text-align: center;">Booking Statuses (Bar)</h3>
                         <div style="height: 300px;">
                             <canvas id="bookingsChart"></canvas>
                         </div>
                     </div>
 
+
+
                     <!-- Chart 4: Parking Spaces -->
-                    <div style="background: white; padding: 20px; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
+                    <div
+                        style="background: white; padding: 20px; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
                         <h3 style="margin-bottom: 15px; text-align: center;">Parking Spaces Status</h3>
                         <canvas id="spacesChart"></canvas>
                     </div>
 
                     <!-- Chart 5: Parking Areas -->
-                    <div style="background: white; padding: 20px; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
+                    <div
+                        style="background: white; padding: 20px; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
                         <h3 style="margin-bottom: 15px; text-align: center;">Parking Areas Status</h3>
                         <canvas id="areasChart"></canvas>
                     </div>
@@ -647,8 +749,7 @@ closeDBConnection($conn);
                     },
                     options: { responsive: true }
                 });
-
-                // Bookings Chart
+                // Bookings Chart (Bar)
                 const ctxBookings = document.getElementById('bookingsChart').getContext('2d');
                 new Chart(ctxBookings, {
                     type: 'bar',
@@ -670,6 +771,22 @@ closeDBConnection($conn);
                         }
                     }
                 });
+
+                // Bookings Chart (Pie) - NEW
+                const ctxBookingsPie = document.getElementById('bookingsPieChart').getContext('2d');
+                new Chart(ctxBookingsPie, {
+                    type: 'pie',
+                    data: {
+                        labels: <?php echo json_encode($booking_statuses); ?>,
+                        datasets: [{
+                            data: <?php echo json_encode($booking_counts); ?>,
+                            backgroundColor: ['#4299e1', '#48bb78', '#a0aec0', '#ed8936'], // Blue, Green, Gray, Orange (for expired)
+                            borderWidth: 0
+                        }]
+                    },
+                    options: { responsive: true }
+                });
+
 
                 // Parking Spaces Chart
                 const ctxSpaces = document.getElementById('spacesChart').getContext('2d');
