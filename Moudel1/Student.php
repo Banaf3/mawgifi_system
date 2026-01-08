@@ -209,7 +209,7 @@ $stmt->close();
 
 // Fetch user's vehicles
 $vehicles = [];
-$stmt = $conn->prepare("SELECT vehicle_id, vehicle_type, vehicle_model, license_plate, created_at, Approved_date, status, grant_document FROM Vehicle WHERE user_id = ? ORDER BY created_at DESC");
+$stmt = $conn->prepare("SELECT vehicle_id, vehicle_type, vehicle_model, license_plate, created_at, Approved_date, status, grant_document, rejection_reason FROM Vehicle WHERE user_id = ? ORDER BY created_at DESC");
 $stmt->bind_param("i", $user_id);
 $stmt->execute();
 $result = $stmt->get_result();
@@ -478,16 +478,18 @@ closeDBConnection($conn);
                                         <td>
                                             <button type="button" class="btn btn-edit"
                                                 onclick="openEditModal(<?php echo $vehicle['vehicle_id']; ?>, '<?php echo htmlspecialchars($vehicle['vehicle_type'], ENT_QUOTES); ?>', '<?php echo htmlspecialchars($vehicle['vehicle_model'], ENT_QUOTES); ?>', '<?php echo htmlspecialchars($vehicle['license_plate'], ENT_QUOTES); ?>', '<?php echo htmlspecialchars($vehicle['grant_document'] ?? '', ENT_QUOTES); ?>')">Edit</button>
-                                            <?php if ($vehicle['status'] === 'rejected' && !empty($vehicle['rejection_reason'])): ?>
-                                                <button type="button" class="btn btn-reason"
-                                                    onclick="openReasonModal('<?php echo htmlspecialchars($vehicle['rejection_reason'], ENT_QUOTES); ?>')">Reason</button>
-                                            <?php endif; ?>
                                             <form method="POST" action="" style="display: inline;"
                                                 onsubmit="return confirm('Are you sure you want to delete this vehicle?');">
                                                 <input type="hidden" name="vehicle_id"
                                                     value="<?php echo $vehicle['vehicle_id']; ?>">
                                                 <button type="submit" name="delete_vehicle" class="btn btn-danger">Delete</button>
                                             </form>
+                                            <?php if ($vehicle['status'] === 'rejected' && !empty($vehicle['rejection_reason'])): ?>
+                                                <button type="button" class="btn btn-reason" style="background: #f59e0b; color: white; padding: 6px 12px; border: none; border-radius: 6px; cursor: pointer; margin-left: 5px;"
+                                                    onclick="openReasonModal('<?php echo htmlspecialchars($vehicle['rejection_reason'], ENT_QUOTES); ?>')" title="View Rejection Reason">
+                                                    ⚠️ Reason
+                                                </button>
+                                            <?php endif; ?>
                                         </td>
                                     </tr>
                                 <?php endforeach; ?>
@@ -619,7 +621,7 @@ closeDBConnection($conn);
             var table = document.querySelector('.vehicles-table');
             if (!table) return;
             var rows = table.querySelectorAll('tbody tr');
-            
+
             rows.forEach(function(row) {
                 var text = row.textContent.toLowerCase();
                 row.style.display = text.includes(filter) ? '' : 'none';

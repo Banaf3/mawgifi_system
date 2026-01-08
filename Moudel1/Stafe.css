@@ -1,3 +1,5 @@
+@import url('https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css');
+
 :root {
     --primary-grad: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
     --text-dark: #2d3748;
@@ -141,16 +143,18 @@ body {
     font-size: 14px;
 }
 
+/* Bootstrap alert integration: Using Bootstrap's alert-danger styling */
 .alert-error {
-    background-color: #fee2e2;
-    color: #991b1b;
-    border: 1px solid #fecaca;
+    background-color: #f8d7da;
+    color: #842029;
+    border: 1px solid #f5c2c7;
 }
 
+/* Bootstrap alert integration: Using Bootstrap's alert-success styling */
 .alert-success {
-    background-color: #dcfce7;
-    color: #166534;
-    border: 1px solid #bbf7d0;
+    background-color: #d1e7dd;
+    color: #0f5132;
+    border: 1px solid #badbcc;
 }
 
 .section {
@@ -285,6 +289,7 @@ body {
     flex: 1;
 }
 
+/* Bootstrap integration: Using Bootstrap's btn-success and btn-danger as base */
 .btn-approve {
     background: #10b981;
     color: white;
@@ -333,14 +338,17 @@ body {
     border-radius: 10px;
 }
 
-/* Dashboard Styles */
+/* Dashboard Styles - Bootstrap card integration */
 .dashboard-welcome {
     background: white;
     padding: 40px;
     border-radius: 20px;
-    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.05);
+    /* Bootstrap shadow-sm effect */
+    box-shadow: 0 .125rem .25rem rgba(0, 0, 0, .075) !important;
     text-align: center;
     margin-bottom: 40px;
+    /* Bootstrap border styling */
+    border: 1px solid rgba(0, 0, 0, .125);
 }
 
 .dashboard-welcome h2 {
@@ -365,7 +373,8 @@ body {
     background: white;
     padding: 30px;
     border-radius: 20px;
-    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.05);
+    /* Bootstrap shadow effect */
+    box-shadow: 0 .5rem 1rem rgba(0, 0, 0, 0.15) !important;
     transition: transform 0.3s, box-shadow 0.3s;
     text-decoration: none;
     color: inherit;
@@ -373,11 +382,15 @@ body {
     position: relative;
     overflow: hidden;
     display: block;
+    /* Bootstrap card border */
+    border: 1px solid rgba(0, 0, 0, .125);
+    border-top-width: 5px;
 }
 
 .module-card:hover {
     transform: translateY(-8px);
-    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.12);
+    /* Bootstrap shadow-lg on hover */
+    box-shadow: 0 1rem 3rem rgba(0, 0, 0, .175) !important;
 }
 
 .module-card.m1 {
@@ -409,7 +422,7 @@ body {
     font-size: 0.95rem;
 }
 
-/* Stats Section */
+/* Stats Section - Bootstrap integration */
 .stats-section {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
@@ -420,9 +433,12 @@ body {
     background: white;
     padding: 30px;
     border-radius: 20px;
-    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.05);
+    /* Bootstrap shadow-lg */
+    box-shadow: 0 1rem 3rem rgba(0, 0, 0, 0.175) !important;
     text-align: center;
     transition: transform 0.3s;
+    /* Bootstrap card border */
+    border: 1px solid rgba(0, 0, 0, .125);
 }
 
 .stat-card:hover {

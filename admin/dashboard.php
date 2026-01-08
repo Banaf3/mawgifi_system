@@ -15,6 +15,10 @@ $username = $_SESSION['username'] ?? 'Administrator';
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Admin Dashboard - Mawgifi</title>
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Bootstrap Icons -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
     <style>
         :root {
             --primary-grad: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
@@ -216,48 +220,81 @@ $username = $_SESSION['username'] ?? 'Administrator';
         <div class="user-profile">
             <div class="avatar-circle"><?php echo strtoupper(substr($username, 0, 1)); ?></div>
             <span class="user-name"><?php echo htmlspecialchars($username); ?></span>
-            <a href="../logout.php" class="logout-btn">Logout</a>
+            <a href="../logout.php" class="btn btn-outline-light btn-sm rounded-pill">
+                <i class="bi bi-box-arrow-right me-1"></i>Logout
+            </a>
         </div>
     </nav>
 
-    <div class="container">
-        <div class="dashboard-welcome">
-            <h2>Welcome Back, <?php echo htmlspecialchars($username); ?>!</h2>
-            <p>Select a module below to start managing the system.</p>
+    <div class="container py-4">
+        <!-- Bootstrap Card for Welcome Section -->
+        <div class="card border-0 shadow-sm mb-4">
+            <div class="card-body text-center p-5">
+                <h2 class="card-title fw-bold text-dark">Welcome Back, <?php echo htmlspecialchars($username); ?>!</h2>
+                <p class="card-text text-muted fs-5">Select a module below to start managing the system.</p>
+            </div>
         </div>
 
-        <div class="modules-grid">
-            <a href="../modules/parking/index.php" class="module-card m2">
-                <h3>🅿️ Parking Map</h3>
-                <p>View parking areas map and monitor real-time slot availability.</p>
-            </a>
+        <!-- Bootstrap Row/Col Grid for Modules -->
+        <div class="row g-4">
+            <div class="col-md-6 col-lg-4">
+                <a href="../modules/parking/index.php" class="card module-card m2 h-100 text-decoration-none shadow-sm border-0">
+                    <div class="card-body">
+                        <h3 class="card-title"><i class="bi bi-p-circle-fill text-primary me-2"></i>Parking Map</h3>
+                        <p class="card-text text-muted">View parking areas map and monitor real-time slot availability.</p>
+                    </div>
+                </a>
+            </div>
 
-            <a href="parking_management.php" class="module-card m4">
-                <h3>🚗 Manage Parking</h3>
-                <p>Add, edit, and delete parking areas and individual parking spaces.</p>
-            </a>
+            <div class="col-md-6 col-lg-4">
+                <a href="parking_management.php" class="card module-card m4 h-100 text-decoration-none shadow-sm border-0">
+                    <div class="card-body">
+                        <h3 class="card-title"><i class="bi bi-car-front-fill text-success me-2"></i>Manage Parking</h3>
+                        <p class="card-text text-muted">Add, edit, and delete parking areas and individual parking spaces.</p>
+                    </div>
+                </a>
+            </div>
 
-            <a href="event_management.php" class="module-card m1">
-                <h3>📅 Event Management</h3>
-                <p>Track facility events like maintenance, cleaning, and lawn mowing.</p>
-            </a>
+            <div class="col-md-6 col-lg-4">
+                <a href="event_management.php" class="card module-card m1 h-100 text-decoration-none shadow-sm border-0">
+                    <div class="card-body">
+                        <h3 class="card-title"><i class="bi bi-calendar-event-fill text-info me-2"></i>Event Management</h3>
+                        <p class="card-text text-muted">Track facility events like maintenance, cleaning, and lawn mowing.</p>
+                    </div>
+                </a>
+            </div>
 
-            <a href="../modules/booking/index.php" class="module-card m3">
-                <h3>📋 Bookings</h3>
-                <p>Oversee parking bookings and manage QR code access systems.</p>
-            </a>
+            <div class="col-md-6 col-lg-4">
+                <a href="../modules/booking/index.php" class="card module-card m3 h-100 text-decoration-none shadow-sm border-0">
+                    <div class="card-body">
+                        <h3 class="card-title"><i class="bi bi-journal-check text-warning me-2"></i>Bookings</h3>
+                        <p class="card-text text-muted">Oversee parking bookings and manage QR code access systems.</p>
+                    </div>
+                </a>
+            </div>
 
-            <a href="../modules/membership/index.php" class="module-card m1">
-                <h3>🚙 Vehicles</h3>
-                <p>Manage user memberships, profiles, and vehicle registrations.</p>
-            </a>
+            <div class="col-md-6 col-lg-4">
+                <a href="../modules/membership/index.php" class="card module-card m1 h-100 text-decoration-none shadow-sm border-0">
+                    <div class="card-body">
+                        <h3 class="card-title"><i class="bi bi-truck-front-fill text-danger me-2"></i>Vehicles</h3>
+                        <p class="card-text text-muted">Manage user memberships, profiles, and vehicle registrations.</p>
+                    </div>
+                </a>
+            </div>
 
-            <a href="../Moudel1/Admin.php?view=profile" class="module-card m2">
-                <h3>👤 User Management</h3>
-                <p>Register students, manage profiles, and handle user accounts.</p>
-            </a>
+            <div class="col-md-6 col-lg-4">
+                <a href="../Moudel1/Admin.php?view=profile" class="card module-card m2 h-100 text-decoration-none shadow-sm border-0">
+                    <div class="card-body">
+                        <h3 class="card-title"><i class="bi bi-people-fill text-secondary me-2"></i>User Management</h3>
+                        <p class="card-text text-muted">Register students, manage profiles, and handle user accounts.</p>
+                    </div>
+                </a>
+            </div>
         </div>
     </div>
+
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 
 </html>
