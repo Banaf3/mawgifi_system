@@ -133,6 +133,41 @@ if ($conn) {
         $vehicles[] = $row;
     }
     $stmt->close();
+
+    // Query 4: Get available spaces count per area
+    $area_counts = [];
+    $total_spaces = 0;
+    $total_available = 0;
+
+    $sql = "SELECT 
+                pa.area_name,
+                pa.area_status,
+                COUNT(ps.Space_id) as total_spaces,
+                SUM(CASE WHEN ps.status = 'available' THEN 1 ELSE 0 END) as available_spaces
+            FROM ParkingArea pa
+            LEFT JOIN ParkingSpace ps ON pa.area_id = ps.area_id
+            GROUP BY pa.area_id
+            ORDER BY pa.area_name";
+
+    $result = $conn->query($sql);
+    if ($result) {
+        while ($row = $result->fetch_assoc()) {
+            $area_code = strtoupper(str_replace('Area ', '', $row['area_name']));
+            $is_open = ($row['area_status'] == 'available' || empty($row['area_status']));
+            $available = $is_open ? (int)$row['available_spaces'] : 0;
+
+            $area_counts[$area_code] = [
+                'name' => $row['area_name'],
+                'total' => (int)$row['total_spaces'],
+                'available' => $available,
+                'color' => isset($parking_areas[$area_code]) ? $parking_areas[$area_code]['color'] : '#667eea',
+                'is_open' => $is_open
+            ];
+
+            $total_spaces += (int)$row['total_spaces'];
+            $total_available += $available;
+        }
+    }
 }
 $conn->close();
 ?>
@@ -614,7 +649,7 @@ $conn->close();
                 foreach ($parking_areas as $code => $area):
                     if (!$area['exists'])
                         continue; // Skip areas that don't exist
-                    ?>
+                ?>
                     <div class="legend-item">
                         <div class="legend-color" style="background: <?php echo $area['color']; ?>;"></div>
                         <span>
@@ -624,8 +659,8 @@ $conn->close();
                 <?php endforeach; ?>
                 <?php if (
                     empty(array_filter($parking_areas, function ($a) {
-                    return $a['exists'];
-                }))
+                        return $a['exists'];
+                    }))
                 ): ?>
                     <div class="legend-item" style="opacity: 0.7;">
                         <em style="color: #999;">No parking areas configured yet</em>
@@ -650,6 +685,44 @@ $conn->close();
     </div>
 
     <div class="booking-panel">
+        <!-- Area Availability Counter -->
+        <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 15px; border-radius: 10px; margin-bottom: 20px;">
+            <h3 style="margin: 0 0 12px 0; font-size: 1rem;">📊 Available Spaces</h3>
+            <div style="display: flex; flex-direction: column; gap: 8px;">
+                <?php if (!empty($area_counts)): ?>
+                    <?php foreach ($area_counts as $area): ?>
+                        <?php if ($area['total'] > 0):
+                            $pct = round(($area['available'] / $area['total']) * 100);
+                            $color = $area['is_open'] ? ($area['available'] > 0 ? '#48bb78' : '#f56565') : '#718096';
+                        ?>
+                            <div style="background: rgba(255,255,255,0.15); padding: 10px 12px; border-radius: 8px; border-left: 4px solid <?= $area['color'] ?>;">
+                                <div style="display: flex; justify-content: space-between; margin-bottom: 4px;">
+                                    <b><?= $area['name'] ?></b>
+                                    <b style="font-size: 1.1rem;"><?= $area['is_open'] ? $area['available'] : '—' ?></b>
+                                </div>
+                                <div style="display: flex; justify-content: space-between; font-size: 0.8rem; opacity: 0.9;">
+                                    <span>of <?= $area['total'] ?> spaces</span>
+                                    <span style="background: <?= $color ?>; padding: 2px 8px; border-radius: 10px; font-size: 0.75rem;">
+                                        <?= $area['is_open'] ? "$pct% free" : 'CLOSED' ?>
+                                    </span>
+                                </div>
+                            </div>
+                        <?php endif; ?>
+                    <?php endforeach; ?>
+
+                    <?php if ($total_spaces > 0): ?>
+                        <div style="background: rgba(255,255,255,0.25); padding: 12px; border-radius: 8px; margin-top: 5px; text-align: center;">
+                            <div style="font-size: 0.85rem;">Total Available</div>
+                            <div style="font-size: 1.5rem; font-weight: bold;"><?= $total_available ?> / <?= $total_spaces ?></div>
+                            <div style="font-size: 0.75rem; opacity: 0.8;"><?= round(($total_available / $total_spaces) * 100) ?>% free</div>
+                        </div>
+                    <?php endif; ?>
+                <?php else: ?>
+                    <div style="text-align: center; padding: 10px; opacity: 0.8;">No parking areas</div>
+                <?php endif; ?>
+            </div>
+        </div>
+
         <?php if ($is_student): ?>
             <h2>📝 Book Parking</h2>
         <?php else: ?>
@@ -781,19 +854,19 @@ $conn->close();
 
     <script>
         // Wait for the page to load completely
-        document.addEventListener('DOMContentLoaded', function () {
+        document.addEventListener('DOMContentLoaded', function() {
 
             // Define parking areas with their slot ranges, colors, and existence status from database
             const parkingAreas = <?php echo json_encode(array_map(function ($area) {
-                return [
-                    'start' => $area['start'],
-                    'end' => $area['end'],
-                    'color' => $area['color'],
-                    'name' => $area['name'],
-                    'exists' => $area['exists'],
-                    'status' => $area['status'] ?? 'available'
-                ];
-            }, $parking_areas)); ?>;
+                                        return [
+                                            'start' => $area['start'],
+                                            'end' => $area['end'],
+                                            'color' => $area['color'],
+                                            'name' => $area['name'],
+                                            'exists' => $area['exists'],
+                                            'status' => $area['status'] ?? 'available'
+                                        ];
+                                    }, $parking_areas)); ?>;
 
             // Mapping of slot numbers to their area data from database
             const slotAreaMapping = <?php echo json_encode($area_slot_mapping); ?>;
@@ -894,7 +967,7 @@ $conn->close();
                 slot.setAttribute('fill', areaInfo.color);
 
                 // Add click event listener for available slots
-                slot.addEventListener('click', function () {
+                slot.addEventListener('click', function() {
                     // Don't allow clicking on taken or unavailable slots
                     // Use selectSlot function which handles logic
                     selectSlot(this);
@@ -1066,18 +1139,18 @@ $conn->close();
             document.getElementById('confirmBtn').disabled = true;
 
             fetch('../booking/api/create_booking.php', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({
-                    vehicle_id: vid,
-                    slot_id: selectedSlot,
-                    date: date,
-                    start_time: start,
-                    end_time: end
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        vehicle_id: vid,
+                        slot_id: selectedSlot,
+                        date: date,
+                        start_time: start,
+                        end_time: end
+                    })
                 })
-            })
                 .then(r => {
                     if (!r.ok) {
                         throw new Error('Server error: ' + r.status);
